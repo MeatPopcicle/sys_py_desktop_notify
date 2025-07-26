@@ -1,0 +1,46 @@
+# ────────────────────────────────────────────────────────────────────────────────
+# Desktop Notify Configuration Example
+# ────────────────────────────────────────────────────────────────────────────────
+
+[notification]
+# Backend selection: "auto", "dunst", "console"
+backend = "auto"
+
+# Default timeout in milliseconds (0 = persistent, null = system default)
+timeout = 3000
+
+# Default urgency level: "low", "normal", "critical"
+urgency = "normal"
+
+# Enable notification sounds
+enable_sound = true
+
+[icons]
+# Icon set selection: "auto", "system", "material", "minimal"
+icon_set = "auto"
+
+# System icon theme name (empty = auto-detect)
+system_theme = ""
+
+# System icon size in pixels
+system_size = 48
+
+# Enable fallback to other icon sets if preferred not available
+fallback_enabled = true
+
+[backends.dunst]
+# dunstify command path
+command = "dunstify"
+
+# Support for markup in notifications
+supports_markup = true
+
+# Maximum timeout in milliseconds
+max_timeout = 60000
+
+[backends.console]
+# Use ANSI colors in console output
+use_colors = true
+
+# Include timestamps in console output
+timestamp = true
