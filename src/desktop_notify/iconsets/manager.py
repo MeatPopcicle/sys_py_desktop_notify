@@ -53,16 +53,28 @@ class IconSetManager:
     
     def _register_default_icon_sets(self):
         """Register the default icon sets."""
-        # Register all available icon sets
-        icon_set_classes = [
-            SystemIconSet,
-            MaterialIconSet, 
-            MinimalIconSet,
+        # Import here to avoid circular imports
+        from ..config import get_config
+        
+        try:
+            config = get_config()
+            system_theme = config.system_icon_theme
+            system_size = config.system_icon_size
+        except:
+            # Fallback if config not available
+            system_theme = None
+            system_size = 48
+        
+        # Register icon sets with configuration
+        icon_set_configs = [
+            (SystemIconSet, {"theme_name": system_theme, "icon_size": system_size}),
+            (MaterialIconSet, {}),
+            (MinimalIconSet, {}),
         ]
         
-        for icon_set_class in icon_set_classes:
+        for icon_set_class, kwargs in icon_set_configs:
             try:
-                icon_set = icon_set_class()
+                icon_set = icon_set_class(**kwargs)
                 self.icon_sets[icon_set.name] = icon_set
                 self.logger.debug(f"Registered icon set: {icon_set.name}")
             except Exception as e:

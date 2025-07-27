@@ -63,8 +63,12 @@ class SystemIconSet(IconSet):
         
         if PY_NOTIFY_AVAILABLE:
             try:
-                self._resolver = IconResolver()
-                self.logger.debug("Initialized py_notify.IconResolver")
+                # Pass theme and size to IconResolver!
+                self._resolver = IconResolver(
+                    theme=self.theme_name,
+                    size=self.icon_size
+                )
+                self.logger.debug(f"Initialized py_notify.IconResolver with theme='{self.theme_name}', size={self.icon_size}")
             except Exception as e:
                 self.logger.warning(f"Failed to initialize IconResolver: {e}")
                 self._resolver = None
@@ -170,3 +174,37 @@ class SystemIconSet(IconSet):
         """Clear the icon resolution cache."""
         self._cache.clear()
         self.logger.debug("Cleared icon cache")
+    
+    def update_configuration(self, theme_name: Optional[str] = None, icon_size: Optional[int] = None) -> None:
+        """
+        Update IconResolver configuration.
+        
+        Args:
+            theme_name: New theme name (None to keep current)
+            icon_size: New icon size (None to keep current)
+        """
+        if not PY_NOTIFY_AVAILABLE or not self._resolver:
+            return
+        
+        # Update configuration if provided
+        if theme_name is not None:
+            self.theme_name = theme_name
+            
+        if icon_size is not None:
+            self.icon_size = icon_size
+        
+        try:
+            # Update IconResolver properties
+            if theme_name is not None:
+                self._resolver.theme = self.theme_name
+                self.logger.debug(f"Updated IconResolver theme to: {self.theme_name}")
+                
+            if icon_size is not None:
+                self._resolver.size = self.icon_size
+                self.logger.debug(f"Updated IconResolver size to: {self.icon_size}")
+            
+            # Clear cache since resolution may change
+            self.clear_cache()
+            
+        except Exception as e:
+            self.logger.warning(f"Failed to update IconResolver configuration: {e}")
