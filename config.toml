@@ -37,6 +37,12 @@ system_prefer_scalable = false
 # Enable detailed debug logging for icon resolution
 system_debug_logging = false
 
+# Icon resolution mode: "auto" (theme-based), "explicit" (mappings only), "hybrid" (mappings then theme)
+system_mode = "auto"
+
+# Path to YAML icon mapping file (empty = use default ~/.config/py_notify/icon_mappings.yaml)
+system_mapping_file = ""
+
 # Enable fallback to other icon sets if preferred not available
 fallback_enabled = true
 

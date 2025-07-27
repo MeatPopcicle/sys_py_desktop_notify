@@ -62,12 +62,16 @@ class IconSetManager:
             system_size = config.system_icon_size
             system_prefer_scalable = config.system_prefer_scalable
             system_debug_logging = config.system_debug_logging
+            system_mode = config.system_mode
+            system_mapping_file = config.system_mapping_file
         except:
             # Fallback if config not available
             system_theme = None
             system_size = 48
             system_prefer_scalable = False
             system_debug_logging = False
+            system_mode = "auto"
+            system_mapping_file = ""
         
         # Register icon sets with configuration
         icon_set_configs = [
@@ -75,7 +79,9 @@ class IconSetManager:
                 "theme_name": system_theme, 
                 "icon_size": system_size,
                 "prefer_scalable": system_prefer_scalable,
-                "debug_logging": system_debug_logging
+                "debug_logging": system_debug_logging,
+                "mode": system_mode,
+                "mapping_file": system_mapping_file if system_mapping_file else None
             }),
             (MaterialIconSet, {}),
             (MinimalIconSet, {}),

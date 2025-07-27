@@ -50,6 +50,8 @@ def create_desktop_notify_schema() -> ConfigSchema:
     icon_schema.add_field("system_size", int, default=48)
     icon_schema.add_field("system_prefer_scalable", bool, default=False)
     icon_schema.add_field("system_debug_logging", bool, default=False)
+    icon_schema.add_field("system_mode", str, default="auto")
+    icon_schema.add_field("system_mapping_file", str, default="")
     icon_schema.add_field("fallback_enabled", bool, default=True)
     
     main_schema.add_nested_schema("icons", icon_schema)
@@ -260,6 +262,26 @@ class DesktopNotifyConfig:
     def system_debug_logging(self, value: bool) -> None:
         """Set system icon debug logging setting."""
         self.set("icons.system_debug_logging", value)
+    
+    @property
+    def system_mode(self) -> str:
+        """Get system icon resolution mode."""
+        return self.get("icons.system_mode", "auto")
+    
+    @system_mode.setter
+    def system_mode(self, value: str) -> None:
+        """Set system icon resolution mode."""
+        self.set("icons.system_mode", value)
+    
+    @property
+    def system_mapping_file(self) -> str:
+        """Get system icon mapping file path."""
+        return self.get("icons.system_mapping_file", "")
+    
+    @system_mapping_file.setter
+    def system_mapping_file(self, value: str) -> None:
+        """Set system icon mapping file path."""
+        self.set("icons.system_mapping_file", value)
     
     @property 
     def enable_sound(self) -> bool:

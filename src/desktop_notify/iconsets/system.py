@@ -48,7 +48,9 @@ class SystemIconSet(IconSet):
         theme_name: Optional[str] = None, 
         icon_size: int = 48,
         prefer_scalable: bool = False,
-        debug_logging: bool = False
+        debug_logging: bool = False,
+        mode: str = "auto",
+        mapping_file: Optional[str] = None
     ):
         """
         Initialize system icon set.
@@ -58,11 +60,15 @@ class SystemIconSet(IconSet):
             icon_size: Preferred icon size in pixels
             prefer_scalable: Whether to prioritize scalable icons over fixed-size
             debug_logging: Whether to enable detailed debug logging
+            mode: Resolution mode ("auto", "explicit", "hybrid")
+            mapping_file: Path to YAML mapping file (None for default)
         """
         self.theme_name      = theme_name
         self.icon_size       = icon_size
         self.prefer_scalable = prefer_scalable
         self.debug_logging   = debug_logging
+        self.mode            = mode
+        self.mapping_file    = mapping_file
         self.logger          = logging.getLogger(__name__)
         
         # ─────────────────────────────────────────────────────────────────
@@ -78,12 +84,15 @@ class SystemIconSet(IconSet):
                     theme=self.theme_name,
                     size=self.icon_size,
                     prefer_scalable=self.prefer_scalable,
-                    debug_logging=self.debug_logging
+                    debug_logging=self.debug_logging,
+                    mode=self.mode,
+                    mapping_file=self.mapping_file
                 )
                 self.logger.debug(
                     f"Initialized py_notify.IconResolver with theme='{self.theme_name}', "
                     f"size={self.icon_size}, prefer_scalable={self.prefer_scalable}, "
-                    f"debug_logging={self.debug_logging}"
+                    f"debug_logging={self.debug_logging}, mode='{self.mode}', "
+                    f"mapping_file='{self.mapping_file}'"
                 )
             except Exception as e:
                 self.logger.warning(f"Failed to initialize IconResolver: {e}")
@@ -230,7 +239,9 @@ class SystemIconSet(IconSet):
         theme_name: Optional[str] = None, 
         icon_size: Optional[int] = None,
         prefer_scalable: Optional[bool] = None,
-        debug_logging: Optional[bool] = None
+        debug_logging: Optional[bool] = None,
+        mode: Optional[str] = None,
+        mapping_file: Optional[str] = None
     ) -> None:
         """
         Update IconResolver configuration.
@@ -240,6 +251,8 @@ class SystemIconSet(IconSet):
             icon_size: New icon size (None to keep current)
             prefer_scalable: New scalable preference (None to keep current)
             debug_logging: New debug logging setting (None to keep current)
+            mode: New resolution mode (None to keep current)
+            mapping_file: New mapping file path (None to keep current)
         """
         if not PY_NOTIFY_AVAILABLE or not self._resolver:
             return
@@ -256,6 +269,12 @@ class SystemIconSet(IconSet):
             
         if debug_logging is not None:
             self.debug_logging = debug_logging
+            
+        if mode is not None:
+            self.mode = mode
+            
+        if mapping_file is not None:
+            self.mapping_file = mapping_file
         
         try:
             # Update IconResolver properties
@@ -274,6 +293,14 @@ class SystemIconSet(IconSet):
             if debug_logging is not None:
                 self._resolver.debug_logging = self.debug_logging
                 self.logger.debug(f"Updated IconResolver debug_logging to: {self.debug_logging}")
+                
+            if mode is not None:
+                self._resolver.mode = self.mode
+                self.logger.debug(f"Updated IconResolver mode to: {self.mode}")
+                
+            if mapping_file is not None:
+                self._resolver.mapping_file = self.mapping_file
+                self.logger.debug(f"Updated IconResolver mapping_file to: {self.mapping_file}")
             
             # Clear cache since resolution may change
             self.clear_cache()
