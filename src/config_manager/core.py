@@ -85,7 +85,7 @@ class ConfigManager:
             if config_path.exists():
                 try:
                     toml_data = self.toml_loader.load(config_path)
-                    self._merge_config(merged_config, toml_data, source=str(config_path))
+                    self._merge_config(merged_config, toml_data, str(config_path))
                     self.logger.debug(f"Loaded configuration from: {config_path}")
                 except Exception as e:
                     self.logger.warning(f"Failed to load {config_path}: {e}")
@@ -97,7 +97,7 @@ class ConfigManager:
         # ─────────────────────────────────────────────────────────────────
         env_overrides = self.env_loader.load()
         if env_overrides:
-            self._merge_config(merged_config, env_overrides, source="environment")
+            self._merge_config(merged_config, env_overrides, "environment")
             self.logger.debug(f"Applied {len(env_overrides)} environment overrides")
         
         # ─────────────────────────────────────────────────────────────────

@@ -43,17 +43,27 @@ class SystemIconSet(IconSet):
     /home/gauol/Scratch/Projects - Code/py_nofify
     """
     
-    def __init__(self, theme_name: Optional[str] = None, icon_size: int = 48):
+    def __init__(
+        self, 
+        theme_name: Optional[str] = None, 
+        icon_size: int = 48,
+        prefer_scalable: bool = False,
+        debug_logging: bool = False
+    ):
         """
         Initialize system icon set.
         
         Args:
             theme_name: Icon theme name (None for auto-detection)
             icon_size: Preferred icon size in pixels
+            prefer_scalable: Whether to prioritize scalable icons over fixed-size
+            debug_logging: Whether to enable detailed debug logging
         """
-        self.theme_name  = theme_name
-        self.icon_size   = icon_size
-        self.logger      = logging.getLogger(__name__)
+        self.theme_name      = theme_name
+        self.icon_size       = icon_size
+        self.prefer_scalable = prefer_scalable
+        self.debug_logging   = debug_logging
+        self.logger          = logging.getLogger(__name__)
         
         # ─────────────────────────────────────────────────────────────────
         # Initialize py_notify IconResolver
@@ -63,12 +73,18 @@ class SystemIconSet(IconSet):
         
         if PY_NOTIFY_AVAILABLE:
             try:
-                # Pass theme and size to IconResolver!
+                # Pass all configuration parameters to IconResolver
                 self._resolver = IconResolver(
                     theme=self.theme_name,
-                    size=self.icon_size
+                    size=self.icon_size,
+                    prefer_scalable=self.prefer_scalable,
+                    debug_logging=self.debug_logging
                 )
-                self.logger.debug(f"Initialized py_notify.IconResolver with theme='{self.theme_name}', size={self.icon_size}")
+                self.logger.debug(
+                    f"Initialized py_notify.IconResolver with theme='{self.theme_name}', "
+                    f"size={self.icon_size}, prefer_scalable={self.prefer_scalable}, "
+                    f"debug_logging={self.debug_logging}"
+                )
             except Exception as e:
                 self.logger.warning(f"Failed to initialize IconResolver: {e}")
                 self._resolver = None
@@ -92,11 +108,22 @@ class SystemIconSet(IconSet):
         ─────────────────────────────────────────────────────────────────
         """
         if not self.is_available():
+            self.logger.debug(f"❌ SystemIconSet not available for '{name}'")
             return None
         
         # Check cache first
         if name in self._cache:
-            return self._cache[name]
+            cached_result = self._cache[name]
+            if self._should_log_resolution():
+                if cached_result:
+                    self.logger.info(f"🔄 Icon '{name}' → '{cached_result}' (cached)")
+                else:
+                    self.logger.info(f"🔄 Icon '{name}' → None (cached miss)")
+            return cached_result
+        
+        if self._should_log_resolution():
+            self.logger.info(f"🔍 Resolving icon: '{name}'")
+            self.logger.info(f"   Theme: {self.theme_name or 'auto'}, Size: {self.icon_size}, Scalable: {self.prefer_scalable}")
         
         try:
             # Use py_notify.IconResolver to resolve icon
@@ -108,17 +135,40 @@ class SystemIconSet(IconSet):
                 # Verify the file exists
                 if Path(resolved_path).exists():
                     self._cache[name] = resolved_path
-                    self.logger.debug(f"Resolved '{name}' -> '{resolved_path}'")
+                    
+                    if self._should_log_resolution():
+                        self.logger.info(f"✅ Icon '{name}' → '{resolved_path}'")
+                    else:
+                        self.logger.debug(f"Resolved '{name}' -> '{resolved_path}'")
+                    
                     return resolved_path
                 else:
-                    self.logger.debug(f"Resolved path does not exist: {resolved_path}")
+                    if self._should_log_resolution():
+                        self.logger.warning(f"⚠️ Icon '{name}' resolved to non-existent path: {resolved_path}")
+                    else:
+                        self.logger.debug(f"Resolved path does not exist: {resolved_path}")
+            else:
+                if self._should_log_resolution():
+                    self.logger.info(f"❌ Icon '{name}' → None (not found)")
             
         except Exception as e:
-            self.logger.debug(f"Failed to resolve icon '{name}': {e}")
+            if self._should_log_resolution():
+                self.logger.error(f"💥 Icon '{name}' resolution failed: {e}")
+            else:
+                self.logger.debug(f"Failed to resolve icon '{name}': {e}")
         
         # Cache negative results to avoid repeated lookups
         self._cache[name] = None
         return None
+    
+    def _should_log_resolution(self) -> bool:
+        """Check if icon resolution should be logged based on config."""
+        try:
+            from ..config import get_config
+            config = get_config()
+            return config.log_icon_resolution
+        except:
+            return False
     
     def list_icons(self) -> List[str]:
         """
@@ -175,13 +225,21 @@ class SystemIconSet(IconSet):
         self._cache.clear()
         self.logger.debug("Cleared icon cache")
     
-    def update_configuration(self, theme_name: Optional[str] = None, icon_size: Optional[int] = None) -> None:
+    def update_configuration(
+        self, 
+        theme_name: Optional[str] = None, 
+        icon_size: Optional[int] = None,
+        prefer_scalable: Optional[bool] = None,
+        debug_logging: Optional[bool] = None
+    ) -> None:
         """
         Update IconResolver configuration.
         
         Args:
             theme_name: New theme name (None to keep current)
             icon_size: New icon size (None to keep current)
+            prefer_scalable: New scalable preference (None to keep current)
+            debug_logging: New debug logging setting (None to keep current)
         """
         if not PY_NOTIFY_AVAILABLE or not self._resolver:
             return
@@ -192,6 +250,12 @@ class SystemIconSet(IconSet):
             
         if icon_size is not None:
             self.icon_size = icon_size
+            
+        if prefer_scalable is not None:
+            self.prefer_scalable = prefer_scalable
+            
+        if debug_logging is not None:
+            self.debug_logging = debug_logging
         
         try:
             # Update IconResolver properties
@@ -202,6 +266,14 @@ class SystemIconSet(IconSet):
             if icon_size is not None:
                 self._resolver.size = self.icon_size
                 self.logger.debug(f"Updated IconResolver size to: {self.icon_size}")
+                
+            if prefer_scalable is not None:
+                self._resolver.prefer_scalable = self.prefer_scalable
+                self.logger.debug(f"Updated IconResolver prefer_scalable to: {self.prefer_scalable}")
+                
+            if debug_logging is not None:
+                self._resolver.debug_logging = self.debug_logging
+                self.logger.debug(f"Updated IconResolver debug_logging to: {self.debug_logging}")
             
             # Clear cache since resolution may change
             self.clear_cache()

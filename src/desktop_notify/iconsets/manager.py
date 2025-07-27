@@ -60,14 +60,23 @@ class IconSetManager:
             config = get_config()
             system_theme = config.system_icon_theme
             system_size = config.system_icon_size
+            system_prefer_scalable = config.system_prefer_scalable
+            system_debug_logging = config.system_debug_logging
         except:
             # Fallback if config not available
             system_theme = None
             system_size = 48
+            system_prefer_scalable = False
+            system_debug_logging = False
         
         # Register icon sets with configuration
         icon_set_configs = [
-            (SystemIconSet, {"theme_name": system_theme, "icon_size": system_size}),
+            (SystemIconSet, {
+                "theme_name": system_theme, 
+                "icon_size": system_size,
+                "prefer_scalable": system_prefer_scalable,
+                "debug_logging": system_debug_logging
+            }),
             (MaterialIconSet, {}),
             (MinimalIconSet, {}),
         ]

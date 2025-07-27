@@ -16,6 +16,7 @@ import logging
 from desktop_notify import send_notification, NotificationManager, is_notifications_available
 
 # Setup logging to see debug information
+# Note: The desktop_notify config will override the log level for its own loggers
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 def main():
@@ -40,6 +41,10 @@ def main():
         return
     
     print("✅ Notification system available")
+    
+    # Test our logging configuration
+    test_logger = logging.getLogger('desktop_notify')
+    test_logger.info("🔧 Desktop-notify logging is configured and working")
     print()
     
     # ─────────────────────────────────────────────────────────────────

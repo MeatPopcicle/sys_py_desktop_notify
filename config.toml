@@ -15,6 +15,12 @@ urgency = "normal"
 # Enable notification sounds
 enable_sound = true
 
+# Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL
+log_level = "INFO"
+
+# Enable detailed icon resolution logging (shows which icons are resolved and their paths)
+log_icon_resolution = false
+
 [icons]
 # Icon set selection: "auto", "system", "material", "minimal"
 icon_set = "auto"
@@ -24,6 +30,12 @@ system_theme = ""
 
 # System icon size in pixels
 system_size = 48
+
+# Prefer scalable icons over fixed-size icons
+system_prefer_scalable = false
+
+# Enable detailed debug logging for icon resolution
+system_debug_logging = false
 
 # Enable fallback to other icon sets if preferred not available
 fallback_enabled = true

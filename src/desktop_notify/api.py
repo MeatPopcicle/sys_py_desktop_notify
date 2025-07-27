@@ -169,14 +169,40 @@ class NotificationManager:
             Resolved icon path/glyph or fallback
         """
         if not self.icon_manager:
+            self.logger.debug(f"📎 No icon manager available, using '{icon}' as-is")
             return icon  # Return as-is if no icon manager
         
         try:
+            # Check if we should log resolution
+            should_log = self._should_log_resolution()
+            
+            if should_log:
+                active_set = self.icon_manager.get_active_icon_set()
+                self.logger.info(f"🎨 Resolving icon '{icon}' using set: {active_set}")
+            
             resolved = self.icon_manager.get_icon(icon, fallback=True)
-            return resolved or icon
+            
+            if resolved and resolved != icon:
+                if should_log:
+                    self.logger.info(f"🎯 Final resolution: '{icon}' → '{resolved}'")
+                else:
+                    self.logger.debug(f"Icon resolved: '{icon}' -> '{resolved}'")
+                return resolved
+            else:
+                if should_log:
+                    self.logger.info(f"📎 Using original icon name: '{icon}'")
+                return icon
+                
         except Exception as e:
-            self.logger.debug(f"Icon resolution failed for '{icon}': {e}")
+            self.logger.error(f"Icon resolution failed for '{icon}': {e}")
             return icon
+    
+    def _should_log_resolution(self) -> bool:
+        """Check if icon resolution should be logged based on config."""
+        try:
+            return self.config.log_icon_resolution
+        except:
+            return False
     
     def is_available(self) -> bool:
         """

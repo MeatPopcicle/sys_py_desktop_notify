@@ -20,6 +20,9 @@ Advanced Usage:
     manager.send("error", "Process Failed", "Could not complete operation")
 """
 
+# Setup logging early
+from . import logging_setup
+
 from .api import send_notification, NotificationManager, is_notifications_available
 from .exceptions import DesktopNotifyError, BackendError, IconError
 

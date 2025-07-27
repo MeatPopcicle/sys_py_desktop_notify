@@ -38,6 +38,8 @@ def create_desktop_notify_schema() -> ConfigSchema:
     main_schema.add_field("timeout", int, default=3000) 
     main_schema.add_field("urgency", str, default="normal")
     main_schema.add_field("enable_sound", bool, default=True)
+    main_schema.add_field("log_level", str, default="INFO")
+    main_schema.add_field("log_icon_resolution", bool, default=False)
     
     # ─────────────────────────────────────────────────────────────────
     # Icon settings
@@ -46,6 +48,8 @@ def create_desktop_notify_schema() -> ConfigSchema:
     icon_schema.add_field("icon_set", str, default="auto")
     icon_schema.add_field("system_theme", str, default="")
     icon_schema.add_field("system_size", int, default=48)
+    icon_schema.add_field("system_prefer_scalable", bool, default=False)
+    icon_schema.add_field("system_debug_logging", bool, default=False)
     icon_schema.add_field("fallback_enabled", bool, default=True)
     
     main_schema.add_nested_schema("icons", icon_schema)
@@ -237,6 +241,26 @@ class DesktopNotifyConfig:
         """Set system icon size."""
         self.set("icons.system_size", value)
     
+    @property
+    def system_prefer_scalable(self) -> bool:
+        """Get system icon scalable preference."""
+        return self.get("icons.system_prefer_scalable", False)
+    
+    @system_prefer_scalable.setter
+    def system_prefer_scalable(self, value: bool) -> None:
+        """Set system icon scalable preference."""
+        self.set("icons.system_prefer_scalable", value)
+    
+    @property
+    def system_debug_logging(self) -> bool:
+        """Get system icon debug logging setting."""
+        return self.get("icons.system_debug_logging", False)
+    
+    @system_debug_logging.setter
+    def system_debug_logging(self, value: bool) -> None:
+        """Set system icon debug logging setting."""
+        self.set("icons.system_debug_logging", value)
+    
     @property 
     def enable_sound(self) -> bool:
         """Get sound enablement status."""
@@ -246,6 +270,27 @@ class DesktopNotifyConfig:
     def enable_sound(self, value: bool) -> None:
         """Set sound enablement status."""
         self.set("enable_sound", value)
+    
+    @property
+    def log_level(self) -> str:
+        """Get logging level."""
+        return self.get("notification.log_level", "INFO")
+    
+    @log_level.setter
+    def log_level(self, value: str) -> None:
+        """Set logging level."""
+        self.set("notification.log_level", value)
+    
+    @property
+    def log_icon_resolution(self) -> bool:
+        """Get icon resolution logging setting."""
+        result = self.get("notification.log_icon_resolution", False)
+        return result
+    
+    @log_icon_resolution.setter
+    def log_icon_resolution(self, value: bool) -> None:
+        """Set icon resolution logging setting."""
+        self.set("notification.log_icon_resolution", value)
     
     # ─────────────────────────────────────────────────────────────────
     # Backend-specific configuration
