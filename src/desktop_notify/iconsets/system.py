@@ -1,5 +1,5 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# System Icon Set with py_notify Integration
+# System Icon Set with icon_mapper Integration
 # ────────────────────────────────────────────────────────────────────────────────
 """
 system.py
@@ -7,8 +7,8 @@ AUTHOR: Desktop Notify Team
 DATE: 2024-01-15
 VERSION: 1.0.0
 
-System icon set using py_notify.IconResolver from:
-/home/gauol/Scratch/Projects - Code/py_nofify
+System icon set using icon_mapper.IconResolver from:
+/home/gauol/Scratch/Projects - Code/icon-mapper
 """
 
 import logging
@@ -20,12 +20,18 @@ from ..exceptions import IconError
 
 try:
     # ═══════════════════════════════════════════════════════════════════════════════
-    # IMPORT py_notify.IconResolver
+    # IMPORT icon_mapper.IconResolver
     # ═══════════════════════════════════════════════════════════════════════════════
-    from py_notify import IconResolver
-    PY_NOTIFY_AVAILABLE = True
+    import sys
+    from pathlib import Path
+    icon_mapper_path = Path("/home/gauol/Scratch/Projects - Code/icon-mapper/src")
+    if icon_mapper_path.exists() and str(icon_mapper_path) not in sys.path:
+        sys.path.insert(0, str(icon_mapper_path))
+    
+    from icon_mapper import IconResolver
+    ICON_MAPPER_AVAILABLE = True
 except ImportError as e:
-    PY_NOTIFY_AVAILABLE = False
+    ICON_MAPPER_AVAILABLE = False
     IconResolver = None
 
 
@@ -37,10 +43,10 @@ class SystemIconSet(IconSet):
     █▄▄▄▄ █▄▄ █▄▄▄   █   █▄▄▄ █▄▄▄▄
     ▄▄▄▄█ █▄▄ █▄▄▄   █   █▄▄▄ █▄▄▄▄
     ///////////////////////////////////////////////////////////////////
-    System icon set using desktop theme icons via py_notify.IconResolver.
+    System icon set using desktop theme icons via icon_mapper.IconResolver.
     
-    INTEGRATION: Uses py_notify.IconResolver from:
-    /home/gauol/Scratch/Projects - Code/py_nofify
+    INTEGRATION: Uses icon_mapper.IconResolver from:
+    /home/gauol/Scratch/Projects - Code/icon-mapper
     """
     
     def __init__(
@@ -72,33 +78,25 @@ class SystemIconSet(IconSet):
         self.logger          = logging.getLogger(__name__)
         
         # ─────────────────────────────────────────────────────────────────
-        # Initialize py_notify IconResolver
+        # Initialize icon_mapper IconResolver
         # ─────────────────────────────────────────────────────────────────
         self._resolver   = None
         self._cache      = {}  # Icon name -> resolved path cache
         
-        if PY_NOTIFY_AVAILABLE:
+        if ICON_MAPPER_AVAILABLE:
             try:
-                # Pass all configuration parameters to IconResolver
-                self._resolver = IconResolver(
-                    theme=self.theme_name,
-                    size=self.icon_size,
-                    prefer_scalable=self.prefer_scalable,
-                    debug_logging=self.debug_logging,
-                    mode=self.mode,
-                    mapping_file=self.mapping_file
-                )
+                # icon_mapper uses simplified API - only theme name is needed
+                # Default theme will be used if theme_name is None
+                theme_to_use = self.theme_name if self.theme_name else "breeze"
+                self._resolver = IconResolver(theme=theme_to_use)
                 self.logger.debug(
-                    f"Initialized py_notify.IconResolver with theme='{self.theme_name}', "
-                    f"size={self.icon_size}, prefer_scalable={self.prefer_scalable}, "
-                    f"debug_logging={self.debug_logging}, mode='{self.mode}', "
-                    f"mapping_file='{self.mapping_file}'"
+                    f"Initialized icon_mapper.IconResolver with theme='{theme_to_use}'"
                 )
             except Exception as e:
                 self.logger.warning(f"Failed to initialize IconResolver: {e}")
                 self._resolver = None
         else:
-            self.logger.warning("py_notify not available - system icons disabled")
+            self.logger.warning("icon_mapper not available - system icons disabled")
     
     @property
     def name(self) -> str:
@@ -113,7 +111,7 @@ class SystemIconSet(IconSet):
     def get_icon(self, name: str) -> Optional[str]:
         """
         ─────────────────────────────────────────────────────────────────
-        Resolve icon name using py_notify.IconResolver
+        Resolve icon name using icon_mapper.IconResolver
         ─────────────────────────────────────────────────────────────────
         """
         if not self.is_available():
@@ -135,27 +133,19 @@ class SystemIconSet(IconSet):
             self.logger.info(f"   Theme: {self.theme_name or 'auto'}, Size: {self.icon_size}, Scalable: {self.prefer_scalable}")
         
         try:
-            # Use py_notify.IconResolver to resolve icon
-            result = self._resolver.resolve(name)
+            # Use icon_mapper.IconResolver to resolve icon
+            result = self._resolver.get_icon(name)
             
             if result:
                 resolved_path = str(result)
+                self._cache[name] = resolved_path
                 
-                # Verify the file exists
-                if Path(resolved_path).exists():
-                    self._cache[name] = resolved_path
-                    
-                    if self._should_log_resolution():
-                        self.logger.info(f"✅ Icon '{name}' → '{resolved_path}'")
-                    else:
-                        self.logger.debug(f"Resolved '{name}' -> '{resolved_path}'")
-                    
-                    return resolved_path
+                if self._should_log_resolution():
+                    self.logger.info(f"✅ Icon '{name}' → '{resolved_path}'")
                 else:
-                    if self._should_log_resolution():
-                        self.logger.warning(f"⚠️ Icon '{name}' resolved to non-existent path: {resolved_path}")
-                    else:
-                        self.logger.debug(f"Resolved path does not exist: {resolved_path}")
+                    self.logger.debug(f"Resolved '{name}' -> '{resolved_path}'")
+                
+                return resolved_path
             else:
                 if self._should_log_resolution():
                     self.logger.info(f"❌ Icon '{name}' → None (not found)")
@@ -183,50 +173,22 @@ class SystemIconSet(IconSet):
         """
         List available system icons.
         
-        Note: This is a basic implementation. The py_notify.IconResolver
-        may provide better methods for listing available icons.
+        Note: This uses the icon_mapper.IconResolver's list_icons() method
+        to get all available icons in the current theme.
         """
-        # Common system icon names that are likely to be available
-        common_icons = [
-            # Status icons
-            "info", "warning", "error", "question",
-            "dialog-information", "dialog-warning", "dialog-error", "dialog-question",
-            
-            # Action icons  
-            "save", "open", "close", "quit", "edit", "delete", "add", "remove",
-            "copy", "cut", "paste", "undo", "redo", "find", "replace",
-            
-            # Device icons
-            "computer", "monitor", "keyboard", "mouse", "printer", "scanner",
-            "camera", "microphone", "speaker", "headphones",
-            
-            # Media icons
-            "audio", "video", "image", "document", "text", "folder",
-            "file", "archive", "music", "movie",
-            
-            # Network icons
-            "network", "internet", "wifi", "bluetooth", "email", "web-browser",
-            
-            # System icons
-            "preferences", "settings", "configure", "system", "user", "group",
-            "security", "lock", "unlock", "key", "password",
-            
-            # Application icons
-            "terminal", "calculator", "calendar", "clock", "games",
-            "graphics", "office", "development", "multimedia",
-        ]
+        if not self.is_available():
+            return []
         
-        # Filter to only return icons that can actually be resolved
-        available_icons = []
-        for icon_name in common_icons:
-            if self.get_icon(icon_name) is not None:
-                available_icons.append(icon_name)
-        
-        return available_icons
+        try:
+            # Use icon_mapper's list_icons() method
+            return self._resolver.list_icons()
+        except Exception as e:
+            self.logger.warning(f"Failed to list icons: {e}")
+            return []
     
     def is_available(self) -> bool:
         """Check if system icon set is available."""
-        return (PY_NOTIFY_AVAILABLE and 
+        return (ICON_MAPPER_AVAILABLE and 
                 self._resolver is not None)
     
     def clear_cache(self) -> None:
@@ -254,13 +216,14 @@ class SystemIconSet(IconSet):
             mode: New resolution mode (None to keep current)
             mapping_file: New mapping file path (None to keep current)
         """
-        if not PY_NOTIFY_AVAILABLE or not self._resolver:
+        if not ICON_MAPPER_AVAILABLE or not self._resolver:
             return
         
         # Update configuration if provided
         if theme_name is not None:
             self.theme_name = theme_name
             
+        # icon_mapper doesn't use these parameters, but keep them for compatibility
         if icon_size is not None:
             self.icon_size = icon_size
             
@@ -277,30 +240,13 @@ class SystemIconSet(IconSet):
             self.mapping_file = mapping_file
         
         try:
-            # Update IconResolver properties
+            # Update IconResolver theme if changed
             if theme_name is not None:
-                self._resolver.theme = self.theme_name
-                self.logger.debug(f"Updated IconResolver theme to: {self.theme_name}")
-                
-            if icon_size is not None:
-                self._resolver.size = self.icon_size
-                self.logger.debug(f"Updated IconResolver size to: {self.icon_size}")
-                
-            if prefer_scalable is not None:
-                self._resolver.prefer_scalable = self.prefer_scalable
-                self.logger.debug(f"Updated IconResolver prefer_scalable to: {self.prefer_scalable}")
-                
-            if debug_logging is not None:
-                self._resolver.debug_logging = self.debug_logging
-                self.logger.debug(f"Updated IconResolver debug_logging to: {self.debug_logging}")
-                
-            if mode is not None:
-                self._resolver.mode = self.mode
-                self.logger.debug(f"Updated IconResolver mode to: {self.mode}")
-                
-            if mapping_file is not None:
-                self._resolver.mapping_file = self.mapping_file
-                self.logger.debug(f"Updated IconResolver mapping_file to: {self.mapping_file}")
+                success = self._resolver.set_theme(self.theme_name)
+                if success:
+                    self.logger.debug(f"Updated IconResolver theme to: {self.theme_name}")
+                else:
+                    self.logger.warning(f"Failed to set theme to: {self.theme_name}")
             
             # Clear cache since resolution may change
             self.clear_cache()

@@ -13,7 +13,7 @@ Console notification backend for headless environments and fallback.
 import logging
 import sys
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable, Union
 
 from .base import NotificationBackend
 
@@ -87,8 +87,10 @@ class ConsoleBackend(NotificationBackend):
         notification_id: Optional[str] = None,
         urgency: str = 'normal',
         timeout: Optional[int] = None,
+        actions: Optional[Dict[str, str]] = None,
+        action_callback: Optional[Callable[[str], None]] = None,
         **kwargs
-    ) -> bool:
+    ) -> Union[bool, str]:
         """
         ─────────────────────────────────────────────────────────────────
         Send notification to console/terminal
@@ -131,9 +133,19 @@ class ConsoleBackend(NotificationBackend):
             separator = "    " + "─" * min(50, len(message))
             
             # ─────────────────────────────────────────────────────────────────
+            # Add actions if provided (console doesn't support interactive actions)
+            # ─────────────────────────────────────────────────────────────────
+            action_lines = []
+            if actions:
+                action_lines.append("    Available actions:")
+                for action_id, label in actions.items():
+                    action_lines.append(f"      - {label} ({action_id})")
+                action_lines.append("    Note: Console backend does not support interactive actions")
+            
+            # ─────────────────────────────────────────────────────────────────
             # Output to stderr (to not interfere with script output)
             # ─────────────────────────────────────────────────────────────────
-            output_lines = [header, body, separator]
+            output_lines = [header, body] + action_lines + [separator]
             
             for line in output_lines:
                 print(line, file=sys.stderr)
@@ -142,11 +154,17 @@ class ConsoleBackend(NotificationBackend):
             sys.stderr.flush()
             
             self.logger.debug(f"Sent console notification: {title}")
-            return True
+            
+            # Console backend doesn't support interactive actions
+            if actions:
+                self.logger.debug(f"Console backend cannot handle actions: {list(actions.keys())}")
+                return None  # No action can be selected
+            else:
+                return True
             
         except Exception as e:
             self.logger.error(f"Failed to send console notification: {e}")
-            return False
+            return None if actions else False
     
     def _get_urgency_indicator(self, urgency: str) -> str:
         """Get text indicator for urgency level."""

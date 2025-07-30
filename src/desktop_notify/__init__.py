@@ -23,7 +23,7 @@ Advanced Usage:
 # Setup logging early
 from . import logging_setup
 
-from .api import send_notification, NotificationManager, is_notifications_available
+from .api import send_notification, NotificationManager, is_notifications_available, get_notification_backend
 from .exceptions import DesktopNotifyError, BackendError, IconError
 
 __version__ = "1.0.0"
@@ -31,6 +31,7 @@ __all__ = [
     "send_notification",
     "NotificationManager", 
     "is_notifications_available",
+    "get_notification_backend",
     "DesktopNotifyError",
     "BackendError",
     "IconError",

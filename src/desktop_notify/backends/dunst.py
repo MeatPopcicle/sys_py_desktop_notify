@@ -14,7 +14,7 @@ import logging
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable, Union
 
 from .base import NotificationBackend
 from ..exceptions import BackendError
@@ -81,8 +81,10 @@ class DunstBackend(NotificationBackend):
         notification_id: Optional[str] = None,
         urgency: str = 'normal', 
         timeout: Optional[int] = None,
+        actions: Optional[Dict[str, str]] = None,
+        action_callback: Optional[Callable[[str], None]] = None,
         **kwargs
-    ) -> bool:
+    ) -> Union[bool, str]:
         """
         ─────────────────────────────────────────────────────────────────
         Send notification via dunstify
@@ -135,6 +137,13 @@ class DunstBackend(NotificationBackend):
                 cmd.extend(["-h", "int:suppress-sound:0"])
             
             # ─────────────────────────────────────────────────────────────────
+            # Add actions if provided
+            # ─────────────────────────────────────────────────────────────────
+            if actions:
+                for action_id, label in actions.items():
+                    cmd.extend(["-A", f"{action_id},{label}"])
+            
+            # ─────────────────────────────────────────────────────────────────
             # Add title and message
             # ─────────────────────────────────────────────────────────────────
             cmd.append(title)
@@ -147,24 +156,56 @@ class DunstBackend(NotificationBackend):
                 cmd,
                 capture_output=True,
                 text=True,
-                timeout=10  # Prevent hanging
+                timeout=30 if actions else 10  # Longer timeout for interactive notifications
             )
             
-            if result.returncode == 0:
-                self.logger.debug(f"Sent notification: {title}")
-                return True
+            # ─────────────────────────────────────────────────────────────────
+            # Handle actions response
+            # ─────────────────────────────────────────────────────────────────
+            if actions:
+                if result.returncode == 0:
+                    # Action was selected
+                    selected_action = result.stdout.strip()
+                    self.logger.debug(f"Action selected: {selected_action}")
+                    
+                    # Call callback if provided
+                    if action_callback and selected_action:
+                        try:
+                            action_callback(selected_action)
+                        except Exception as e:
+                            self.logger.error(f"Action callback failed: {e}")
+                    
+                    return selected_action or None
+                elif result.returncode == 1:
+                    # Notification timed out
+                    self.logger.debug(f"Notification timed out: {title}")
+                    return None
+                elif result.returncode == 2:
+                    # Notification was dismissed
+                    self.logger.debug(f"Notification dismissed: {title}")
+                    return None
+                else:
+                    self.logger.warning(
+                        f"dunstify failed (code {result.returncode}): {result.stderr}"
+                    )
+                    return None
             else:
-                self.logger.warning(
-                    f"dunstify failed (code {result.returncode}): {result.stderr}"
-                )
-                return False
+                # Regular notification without actions
+                if result.returncode == 0:
+                    self.logger.debug(f"Sent notification: {title}")
+                    return True
+                else:
+                    self.logger.warning(
+                        f"dunstify failed (code {result.returncode}): {result.stderr}"
+                    )
+                    return False
                 
         except subprocess.TimeoutExpired:
             self.logger.error("dunstify command timed out")
-            return False
+            return None if actions else False
         except Exception as e:
             self.logger.error(f"Failed to send notification: {e}")
-            return False
+            return None if actions else False
     
     def _resolve_icon_path(self, icon: str) -> Optional[str]:
         """
@@ -211,6 +252,8 @@ class DunstBackend(NotificationBackend):
                 "categories",
                 "desktop_entry",
                 "sound",
+                "actions",
+                "callbacks",
             ],
             "urgency_levels": ["low", "normal", "critical"],
             "description": "Dunst notification daemon backend using dunstify",

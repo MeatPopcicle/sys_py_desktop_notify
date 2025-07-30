@@ -11,7 +11,7 @@ Main API interface for desktop notification system.
 """
 
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Callable, Union
 
 from .backends.discovery import BackendDiscovery
 from .iconsets.manager import get_icon_set_manager
@@ -111,8 +111,10 @@ class NotificationManager:
         notification_id: Optional[str] = None,
         urgency: Optional[str] = None,
         timeout: Optional[int] = None,
+        actions: Optional[Dict[str, str]] = None,
+        action_callback: Optional[Callable[[str], None]] = None,
         **kwargs
-    ) -> bool:
+    ) -> Union[bool, str]:
         """
         ─────────────────────────────────────────────────────────────────
         Send a desktop notification
@@ -137,26 +139,36 @@ class NotificationManager:
             # ─────────────────────────────────────────────────────────────────
             # Send notification via backend
             # ─────────────────────────────────────────────────────────────────
-            success = self.backend.send_notification(
+            result = self.backend.send_notification(
                 icon=resolved_icon,
                 title=title,
                 message=message,
                 notification_id=notification_id,
                 urgency=final_urgency,
                 timeout=final_timeout,
+                actions=actions,
+                action_callback=action_callback,
                 **kwargs
             )
             
-            if success:
-                self.logger.debug(f"Sent notification: {title}")
+            if actions:
+                # For interactive notifications, log the action result
+                if result:
+                    self.logger.debug(f"Action selected for '{title}': {result}")
+                else:
+                    self.logger.debug(f"No action selected for '{title}' (timeout/dismiss)")
             else:
-                self.logger.warning(f"Failed to send notification: {title}")
+                # For regular notifications, log success/failure
+                if result:
+                    self.logger.debug(f"Sent notification: {title}")
+                else:
+                    self.logger.warning(f"Failed to send notification: {title}")
             
-            return success
+            return result
             
         except Exception as e:
             self.logger.error(f"Error sending notification: {e}")
-            return False
+            return None if actions else False
     
     def _resolve_icon(self, icon: str) -> str:
         """
@@ -340,8 +352,10 @@ def send_notification(
     notification_id: Optional[str] = None,
     urgency: str = 'normal',
     timeout: Optional[int] = None,
+    actions: Optional[Dict[str, str]] = None,
+    action_callback: Optional[Callable[[str], None]] = None,
     **kwargs
-) -> bool:
+) -> Union[bool, str]:
     """
     ///////////////////////////////////////////////////////////////////
     SEND DESKTOP NOTIFICATION
@@ -358,10 +372,13 @@ def send_notification(
         notification_id: Optional ID for notification updates
         urgency: Urgency level ('low', 'normal', 'critical')
         timeout: Timeout in milliseconds (None = default, 0 = persistent)
+        actions: Optional dict of action_id -> label for notification buttons
+        action_callback: Optional callback function for handling action selection
         **kwargs: Additional backend-specific parameters
         
     Returns:
-        True if notification sent successfully
+        For notifications without actions: True if sent successfully, False otherwise
+        For notifications with actions: Selected action_id string or None if timeout/dismissed
         
     Example:
         send_notification("mic", "Recording Started", "Audio recording in progress")
@@ -374,6 +391,8 @@ def send_notification(
         notification_id=notification_id,
         urgency=urgency,
         timeout=timeout,
+        actions=actions,
+        action_callback=action_callback,
         **kwargs
     )
 

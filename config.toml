@@ -40,7 +40,7 @@ system_debug_logging = false
 # Icon resolution mode: "auto" (theme-based), "explicit" (mappings only), "hybrid" (mappings then theme)
 system_mode = "auto"
 
-# Path to YAML icon mapping file (empty = use default ~/.config/py_notify/icon_mappings.yaml)
+# Path to YAML icon mapping file (empty = use default from icon_mapper themes directory)
 system_mapping_file = ""
 
 # Enable fallback to other icon sets if preferred not available

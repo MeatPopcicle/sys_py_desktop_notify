@@ -5,7 +5,7 @@
 iconsets
 
 Multi-format icon resolution system with automatic fallbacks and 
-integration with py_notify.IconResolver for system icons.
+integration with icon_mapper.IconResolver for system icons.
 """
 
 from .base import IconSet

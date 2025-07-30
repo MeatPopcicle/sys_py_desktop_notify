@@ -11,7 +11,7 @@ Abstract base class for notification backend implementations.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Callable, Union
 
 
 class NotificationBackend(ABC):
@@ -46,8 +46,10 @@ class NotificationBackend(ABC):
         notification_id: Optional[str] = None,
         urgency: str = 'normal',
         timeout: Optional[int] = None,
+        actions: Optional[Dict[str, str]] = None,
+        action_callback: Optional[Callable[[str], None]] = None,
         **kwargs
-    ) -> bool:
+    ) -> Union[bool, str]:
         """
         Send a desktop notification.
         
@@ -58,10 +60,13 @@ class NotificationBackend(ABC):
             notification_id: Optional ID for notification updates
             urgency: Urgency level ('low', 'normal', 'critical')
             timeout: Timeout in milliseconds (None = default, 0 = persistent)
+            actions: Optional dict of action_id -> label for notification buttons
+            action_callback: Optional callback function for handling action selection
             **kwargs: Backend-specific parameters
             
         Returns:
-            True if notification was sent successfully, False otherwise
+            For notifications without actions: True if sent successfully, False otherwise
+            For notifications with actions: Selected action_id string or None if timeout/dismissed
         """
         pass
     
@@ -91,7 +96,7 @@ class NotificationBackend(ABC):
         
         Args:
             feature: Feature name ('notification_id', 'urgency', 'timeout', 
-                    'markup', 'actions', 'sound', 'persistent')
+                    'markup', 'actions', 'sound', 'persistent', 'callbacks')
             
         Returns:
             True if feature is supported, False otherwise
