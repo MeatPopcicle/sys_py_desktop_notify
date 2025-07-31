@@ -11,12 +11,14 @@ Main API interface for desktop notification system.
 """
 
 import logging
+import time
 from typing import Any, Dict, List, Optional, Callable, Union
 
 from .backends.discovery import BackendDiscovery
 from .iconsets.manager import get_icon_set_manager
 from .config import get_config
 from .exceptions import DesktopNotifyError, BackendError, IconError
+from .types import NotificationResult, IconResolutionInfo
 
 
 class NotificationManager:
@@ -73,6 +75,7 @@ class NotificationManager:
         # ─────────────────────────────────────────────────────────────────
         self.backend = None
         self.icon_manager = None
+        self._last_notification_result: Optional[NotificationResult] = None
         
         self._initialize_backend()
         self._initialize_icon_manager()
@@ -116,19 +119,69 @@ class NotificationManager:
         **kwargs
     ) -> Union[bool, str]:
         """
-        ─────────────────────────────────────────────────────────────────
-        Send a desktop notification
-        ─────────────────────────────────────────────────────────────────
+        Send a desktop notification with backward-compatible return value.
+        
+        For detailed information including icon resolution details,
+        use send_detailed() or get_last_notification_result().
         """
+        result = self.send_detailed(
+            icon=icon,
+            title=title,
+            message=message,
+            notification_id=notification_id,
+            urgency=urgency,
+            timeout=timeout,
+            actions=actions,
+            action_callback=action_callback,
+            **kwargs
+        )
+        
+        # Return backward-compatible value
+        if actions:
+            return result.action_result
+        else:
+            return result.success
+    
+    def send_detailed(
+        self,
+        icon: str,
+        title: str,
+        message: str,
+        notification_id: Optional[str] = None,
+        urgency: Optional[str] = None,
+        timeout: Optional[int] = None,
+        actions: Optional[Dict[str, str]] = None,
+        action_callback: Optional[Callable[[str], None]] = None,
+        **kwargs
+    ) -> NotificationResult:
+        """
+        Send a desktop notification with detailed resolution information.
+        
+        Returns:
+            NotificationResult with complete details about the notification
+            and icon resolution process.
+        """
+        total_start_time = time.time()
+        
+        # Initialize result object
+        result = NotificationResult(
+            success=False,
+            backend_used=self.backend.name if self.backend else None,
+            notification_id=notification_id
+        )
+        
         if not self.backend:
-            self.logger.error("No notification backend available")
-            return False
+            result.error_message = "No notification backend available"
+            self.logger.error(result.error_message)
+            self._last_notification_result = result
+            return result
         
         try:
             # ─────────────────────────────────────────────────────────────────
-            # Resolve icon
+            # Resolve icon with detailed information
             # ─────────────────────────────────────────────────────────────────
-            resolved_icon = self._resolve_icon(icon)
+            icon_resolution = self._resolve_icon_detailed(icon)
+            result.icon_resolution = icon_resolution
             
             # ─────────────────────────────────────────────────────────────────
             # Use defaults for unspecified parameters
@@ -139,8 +192,10 @@ class NotificationManager:
             # ─────────────────────────────────────────────────────────────────
             # Send notification via backend
             # ─────────────────────────────────────────────────────────────────
-            result = self.backend.send_notification(
-                icon=resolved_icon,
+            send_start_time = time.time()
+            
+            backend_result = self.backend.send_notification(
+                icon=icon_resolution.resolved_path or icon,
                 title=title,
                 message=message,
                 notification_id=notification_id,
@@ -151,24 +206,37 @@ class NotificationManager:
                 **kwargs
             )
             
+            result.send_time_ms = (time.time() - send_start_time) * 1000
+            result.total_time_ms = (time.time() - total_start_time) * 1000
+            
             if actions:
-                # For interactive notifications, log the action result
-                if result:
-                    self.logger.debug(f"Action selected for '{title}': {result}")
+                # For interactive notifications
+                result.action_result = backend_result if isinstance(backend_result, str) else None
+                result.success = backend_result is not None
+                
+                if result.action_result:
+                    self.logger.debug(f"Action selected for '{title}': {result.action_result}")
                 else:
                     self.logger.debug(f"No action selected for '{title}' (timeout/dismiss)")
             else:
-                # For regular notifications, log success/failure
-                if result:
+                # For regular notifications
+                result.success = bool(backend_result)
+                
+                if result.success:
                     self.logger.debug(f"Sent notification: {title}")
                 else:
                     self.logger.warning(f"Failed to send notification: {title}")
             
+            self._last_notification_result = result
             return result
             
         except Exception as e:
-            self.logger.error(f"Error sending notification: {e}")
-            return None if actions else False
+            error_msg = f"Error sending notification: {e}"
+            result.error_message = error_msg
+            result.total_time_ms = (time.time() - total_start_time) * 1000
+            self.logger.error(error_msg)
+            self._last_notification_result = result
+            return result
     
     def _resolve_icon(self, icon: str) -> str:
         """
@@ -208,6 +276,36 @@ class NotificationManager:
         except Exception as e:
             self.logger.error(f"Icon resolution failed for '{icon}': {e}")
             return icon
+    
+    def _resolve_icon_detailed(self, icon: str) -> IconResolutionInfo:
+        """
+        Resolve icon name with detailed information.
+        
+        Args:
+            icon: Icon name to resolve
+            
+        Returns:
+            IconResolutionInfo with complete resolution details
+        """
+        if not self.icon_manager:
+            # Create basic resolution info for missing icon manager
+            from .types import IconResolutionSource
+            return IconResolutionInfo(
+                original_name=icon,
+                resolved_path=icon,
+                source=IconResolutionSource.NOT_FOUND
+            )
+        
+        try:
+            return self.icon_manager.get_icon_detailed(icon, fallback=True)
+        except Exception as e:
+            self.logger.error(f"Icon resolution failed for '{icon}': {e}")
+            from .types import IconResolutionSource
+            return IconResolutionInfo(
+                original_name=icon,
+                resolved_path=icon,
+                source=IconResolutionSource.NOT_FOUND
+            )
     
     def _should_log_resolution(self) -> bool:
         """Check if icon resolution should be logged based on config."""
@@ -302,6 +400,26 @@ class NotificationManager:
             return self.icon_manager.list_available_sets()
         return []
     
+    def get_last_notification_result(self) -> Optional[NotificationResult]:
+        """
+        Get detailed information about the last notification sent.
+        
+        Returns:
+            NotificationResult with details, or None if no notifications sent yet
+        """
+        return self._last_notification_result
+    
+    def get_last_resolved_icon(self) -> Optional[IconResolutionInfo]:
+        """
+        Get details about the last icon resolution.
+        
+        Returns:
+            IconResolutionInfo for the last resolved icon, or None if no resolution yet
+        """
+        if self.icon_manager:
+            return self.icon_manager.get_last_resolved_icon()
+        return None
+    
     def test_notification(self) -> bool:
         """
         Send a test notification.
@@ -309,12 +427,13 @@ class NotificationManager:
         Returns:
             True if test successful
         """
-        return self.send(
+        result = self.send_detailed(
             icon="info",
             title="Desktop Notify Test",
             message="Test notification from desktop-notify library",
             timeout=3000
         )
+        return result.success
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

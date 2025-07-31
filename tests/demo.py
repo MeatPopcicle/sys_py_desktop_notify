@@ -526,7 +526,7 @@ def run_full_demo():
                     print("   🔄 User wants to run demo again")
                 elif action_id == "docs":
                     print("   📚 User wants to see documentation")
-                    docs_path = Path(__file__).parent / "Documents"
+                    docs_path = Path(__file__).parent.parent / "docs"
                     if docs_path.exists():
                         print(f"   Documentation available at: {docs_path}")
             

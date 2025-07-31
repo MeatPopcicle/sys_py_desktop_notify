@@ -25,6 +25,7 @@ from . import logging_setup
 
 from .api import send_notification, NotificationManager, is_notifications_available, get_notification_backend
 from .exceptions import DesktopNotifyError, BackendError, IconError
+from .types import NotificationResult, IconResolutionInfo, IconResolutionSource
 
 __version__ = "1.0.0"
 __all__ = [
@@ -35,4 +36,7 @@ __all__ = [
     "DesktopNotifyError",
     "BackendError",
     "IconError",
+    "NotificationResult",
+    "IconResolutionInfo", 
+    "IconResolutionSource",
 ]

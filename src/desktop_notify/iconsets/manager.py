@@ -11,7 +11,8 @@ Icon set management system with automatic fallbacks and caching.
 """
 
 import logging
-from typing import Dict, List, Optional
+import time
+from typing import Dict, List, Optional, Union
 from functools import lru_cache
 
 from .base import IconSet
@@ -19,6 +20,7 @@ from .system import SystemIconSet
 from .material import MaterialIconSet
 from .minimal import MinimalIconSet
 from ..exceptions import IconError
+from ..types import IconResolutionInfo, IconResolutionSource
 
 
 class IconSetManager:
@@ -47,6 +49,7 @@ class IconSetManager:
         # ─────────────────────────────────────────────────────────────────
         self.icon_sets: Dict[str, IconSet] = {}
         self.active_icon_set: Optional[str] = None
+        self._last_resolution: Optional[IconResolutionInfo] = None
         
         self._register_default_icon_sets()
         self._select_active_icon_set()
@@ -177,6 +180,141 @@ class IconSetManager:
             return self.icon_sets["minimal"].get_icon("question")
         
         return None
+    
+    def get_icon_detailed(self, name: str, fallback: bool = True) -> IconResolutionInfo:
+        """
+        Get icon with detailed resolution information.
+        
+        Args:
+            name: Icon name to resolve
+            fallback: Whether to use fallback resolution
+            
+        Returns:
+            IconResolutionInfo with complete resolution details
+        """
+        start_time = time.time()
+        
+        # Initialize resolution info
+        resolution_info = IconResolutionInfo(
+            original_name=name,
+            resolved_path=None,
+            source=IconResolutionSource.NOT_FOUND,
+            attempted_sources=[],
+            fallback_chain=[],
+            cached=False
+        )
+        
+        # Check if it's a direct file path
+        if name.startswith('/') or '.' in name:
+            from pathlib import Path
+            path = Path(name)
+            if path.exists() and path.is_file():
+                resolution_info.resolved_path = str(path)
+                resolution_info.source = IconResolutionSource.FILE_PATH
+                resolution_info.resolution_time_ms = (time.time() - start_time) * 1000
+                self._last_resolution = resolution_info
+                return resolution_info
+        
+        # Check if it's a unicode character/emoji
+        if len(name) <= 4 and any(ord(c) > 127 for c in name):
+            resolution_info.resolved_path = name
+            resolution_info.source = IconResolutionSource.UNICODE
+            resolution_info.resolution_time_ms = (time.time() - start_time) * 1000
+            self._last_resolution = resolution_info
+            return resolution_info
+        
+        # Try active icon set first
+        if self.active_icon_set:
+            active_set = self.icon_sets[self.active_icon_set]
+            resolution_info.attempted_sources.append(self.active_icon_set)
+            
+            icon = active_set.get_icon(name)
+            if icon is not None:
+                resolution_info.resolved_path = icon
+                resolution_info.source = self._get_source_for_set(self.active_icon_set)
+                resolution_info.icon_set_used = self.active_icon_set
+                
+                # Get additional metadata from icon set
+                if hasattr(active_set, 'get_theme_name'):
+                    resolution_info.theme_name = getattr(active_set, 'get_theme_name')()
+                if hasattr(active_set, 'get_icon_size'):
+                    resolution_info.size = getattr(active_set, 'get_icon_size')()
+                
+                resolution_info.resolution_time_ms = (time.time() - start_time) * 1000
+                self._last_resolution = resolution_info
+                return resolution_info
+        
+        if not fallback:
+            resolution_info.resolution_time_ms = (time.time() - start_time) * 1000
+            self._last_resolution = resolution_info
+            return resolution_info
+        
+        # Try fallback icon sets in priority order
+        fallback_sets = [
+            (set_name, icon_set) for set_name, icon_set in self.icon_sets.items()
+            if set_name != self.active_icon_set and icon_set.is_available()
+        ]
+        
+        # Sort by priority (higher = better)
+        fallback_sets.sort(key=lambda x: x[1].priority, reverse=True)
+        
+        for set_name, icon_set in fallback_sets:
+            resolution_info.attempted_sources.append(set_name)
+            resolution_info.fallback_chain.append(set_name)
+            
+            icon = icon_set.get_icon(name)
+            if icon is not None:
+                resolution_info.resolved_path = icon
+                resolution_info.source = self._get_source_for_set(set_name)
+                resolution_info.icon_set_used = set_name
+                resolution_info.is_fallback = True
+                
+                # Get additional metadata
+                if hasattr(icon_set, 'get_theme_name'):
+                    resolution_info.theme_name = getattr(icon_set, 'get_theme_name')()
+                if hasattr(icon_set, 'get_icon_size'):
+                    resolution_info.size = getattr(icon_set, 'get_icon_size')()
+                
+                self.logger.debug(f"Found '{name}' in fallback set: {set_name}")
+                resolution_info.resolution_time_ms = (time.time() - start_time) * 1000
+                self._last_resolution = resolution_info
+                return resolution_info
+        
+        # Ultimate fallback - return unknown icon from minimal set
+        if "minimal" in self.icon_sets:
+            resolution_info.attempted_sources.append("minimal")
+            resolution_info.fallback_chain.append("minimal")
+            
+            fallback_icon = self.icon_sets["minimal"].get_icon("question")
+            if fallback_icon:
+                resolution_info.resolved_path = fallback_icon
+                resolution_info.source = IconResolutionSource.FALLBACK
+                resolution_info.icon_set_used = "minimal"
+                resolution_info.is_fallback = True
+                resolution_info.original_name = name  # Keep original name
+        
+        resolution_info.resolution_time_ms = (time.time() - start_time) * 1000
+        self._last_resolution = resolution_info
+        return resolution_info
+    
+    def _get_source_for_set(self, set_name: str) -> IconResolutionSource:
+        """Map icon set name to resolution source."""
+        source_map = {
+            "system": IconResolutionSource.SYSTEM_THEME,
+            "material": IconResolutionSource.MATERIAL,
+            "nerdfonts": IconResolutionSource.NERDFONTS,
+            "minimal": IconResolutionSource.MINIMAL,
+        }
+        return source_map.get(set_name, IconResolutionSource.NOT_FOUND)
+    
+    def get_last_resolved_icon(self) -> Optional[IconResolutionInfo]:
+        """
+        Get details about the last icon resolution.
+        
+        Returns:
+            IconResolutionInfo for the last resolved icon, or None if no resolution yet
+        """
+        return self._last_resolution
     
     def set_active_icon_set(self, name: str) -> bool:
         """
