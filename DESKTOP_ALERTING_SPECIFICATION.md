@@ -5,7 +5,7 @@
 Build a comprehensive, backend-agnostic Python interface for desktop notification systems on Linux. This system serves as a unified API that can target multiple notification backends (Dunst, libnotify, systemd notifications) while providing rich icon resolution, configuration management, and extensible backend architecture.
 
 **DEPENDENCY NOTE**: This desktop alerting utility should utilize the icon resolution library located at:
-`/home/gauol/Scratch/Projects - Code/icon-mapper` (icon_mapper package) for all SystemIconSet functionality.
+`/home/gauol/Scratch/Projects-Code/icon-mapper` (icon_mapper package) for all SystemIconSet functionality.
 
 ## Problem Statement
 
@@ -51,7 +51,7 @@ The project already includes:
 #### 3. Icon Resolution System (`src/desktop_notify/iconsets/`)
 - **Icon Set Manager**: Centralized icon set management and switching
 - **Multiple Icon Sets**: 
-  - SystemIconSet: Uses installed desktop theme icons **[UTILIZES: /home/gauol/Scratch/Projects - Code/icon-mapper icon_mapper.IconResolver]**
+  - SystemIconSet: Uses installed desktop theme icons **[UTILIZES: /home/gauol/Scratch/Projects-Code/icon-mapper icon_mapper.IconResolver]**
   - MaterialIconSet: Modern SVG icon collection  
   - NerdFontIconSet: Font-based icons with color support
   - MinimalIconSet: Unicode/emoji fallbacks
@@ -101,7 +101,7 @@ class IconSet:
 
 # INTEGRATION IMPLEMENTATION:
 # SystemIconSet should utilize icon_mapper.IconResolver from:
-# /home/gauol/Scratch/Projects - Code/icon-mapper
+# /home/gauol/Scratch/Projects-Code/icon-mapper
 #
 # Example implementation:
 # from icon_mapper import IconResolver
@@ -490,7 +490,7 @@ git clone https://github.com/user/desktop-notify
 cd desktop-notify
 
 # DEPENDENCY SETUP: Install icon_mapper library from local path
-poetry add --editable /home/gauol/Scratch/Projects\ -\ Code/icon-mapper
+poetry add --editable /home/gauol/Scratch/Projects-Code/icon-mapper
 
 poetry install
 poetry shell

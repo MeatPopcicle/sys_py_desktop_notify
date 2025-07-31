@@ -8,7 +8,7 @@ DATE: 2024-01-15
 VERSION: 1.0.0
 
 System icon set using icon_mapper.IconResolver from:
-/home/gauol/Scratch/Projects - Code/icon-mapper
+/home/gauol/Scratch/Projects-Code/icon-mapper
 """
 
 import logging
@@ -24,7 +24,7 @@ try:
     # ═══════════════════════════════════════════════════════════════════════════════
     import sys
     from pathlib import Path
-    icon_mapper_path = Path("/home/gauol/Scratch/Projects - Code/icon-mapper/src")
+    icon_mapper_path = Path("/home/gauol/Scratch/Projects-Code/icon-mapper/src")
     if icon_mapper_path.exists() and str(icon_mapper_path) not in sys.path:
         sys.path.insert(0, str(icon_mapper_path))
     
@@ -46,7 +46,7 @@ class SystemIconSet(IconSet):
     System icon set using desktop theme icons via icon_mapper.IconResolver.
     
     INTEGRATION: Uses icon_mapper.IconResolver from:
-    /home/gauol/Scratch/Projects - Code/icon-mapper
+    /home/gauol/Scratch/Projects-Code/icon-mapper
     """
     
     def __init__(

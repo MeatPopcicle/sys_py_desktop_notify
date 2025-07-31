@@ -5,15 +5,15 @@ description = "Unified desktop notification system for Linux with backend abstra
 authors = ["Desktop Notify Team"]
 readme = "README.md"
 packages = [
-    {include = "desktop_notify", from = "src"},
-    {include = "config_manager", from = "src"}
+    {include = "desktop_notify", from = "src"}
 ]
 
 [tool.poetry.dependencies]
 python = "^3.10"
 toml = "^0.10.2"
 pyyaml = "^6.0"
-icon-mapper = {path = "/home/gauol/Scratch/Projects - Code/icon-mapper", develop = true}
+icon-mapper = {path = "/home/gauol/Scratch/Projects-Code/icon-mapper", develop = true}
+config-manager = {path = "../py_config_manager", develop = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0.0"
@@ -49,4 +49,4 @@ strict_optional = true
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "--cov=desktop_notify --cov=config_manager --cov-report=term-missing"
+addopts = "--cov=desktop_notify --cov-report=term-missing"

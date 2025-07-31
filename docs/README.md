@@ -6,7 +6,7 @@ Comprehensive documentation for the Python Desktop Notify library - a unified, b
 
 ### API References
 - **[Desktop Notify API](Desktop_Notify_API.md)** - Complete API documentation for desktop notification system
-- **[Config Manager API](Config_Manager_API.md)** - Complete API documentation for configuration management
+- **[Config Manager API](../../py_config_manager/docs/api_reference.md)** - Complete API documentation for configuration management (external dependency)
 
 ### User Documentation
 - **[User Guide](User_Guide.md)** - Getting started and common usage patterns  
@@ -55,7 +55,7 @@ else:
 | Document | Description |
 |----------|-------------|
 | [Desktop Notify API](Desktop_Notify_API.md) | Complete desktop notification API documentation |
-| [Config Manager API](Config_Manager_API.md) | Complete configuration management API documentation |
+| [Config Manager API](../../py_config_manager/docs/api_reference.md) | Complete configuration management API documentation (external) |
 | [User Guide](User_Guide.md) | Installation, setup, and usage examples |
 | [Configuration Guide](Configuration_Guide.md) | Configuration file format and options |
 | [Backend Development](Backend_Development.md) | Creating custom notification backends |

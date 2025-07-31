@@ -1,5 +1,7 @@
 # Config Manager API Reference
 
+> **Note**: The Config Manager has been extracted as a separate project. This documentation is preserved for reference, but the canonical documentation is now at [py_config_manager/docs/api_reference.md](../../py_config_manager/docs/api_reference.md).
+
 Complete API documentation for the Config Manager library used by Desktop Notify.
 
 ## 📋 Table of Contents
