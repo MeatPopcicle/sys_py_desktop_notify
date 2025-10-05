@@ -19,6 +19,7 @@ from .base import IconSet
 from .system import SystemIconSet
 from .material import MaterialIconSet
 from .minimal import MinimalIconSet
+from .material_complete import MaterialCompleteIconSet
 from ..exceptions import IconError
 from ..types import IconResolutionInfo, IconResolutionSource
 
@@ -50,6 +51,9 @@ class IconSetManager:
         self.icon_sets: Dict[str, IconSet] = {}
         self.active_icon_set: Optional[str] = None
         self._last_resolution: Optional[IconResolutionInfo] = None
+        self._all_or_nothing_mode = True  # Enable all-or-nothing icon resolution
+        self._required_icons: List[str] = []  # Icons required for all-or-nothing
+        self._validation_cache: Dict[str, bool] = {}  # Cache validation results
         
         self._register_default_icon_sets()
         self._select_active_icon_set()
@@ -86,6 +90,7 @@ class IconSetManager:
                 "mode": system_mode,
                 "mapping_file": system_mapping_file if system_mapping_file else None
             }),
+            (MaterialCompleteIconSet, {}),
             (MaterialIconSet, {}),
             (MinimalIconSet, {}),
         ]
@@ -100,6 +105,9 @@ class IconSetManager:
     
     def _select_active_icon_set(self):
         """Select the active icon set based on preferences and availability."""
+        # Get required icons for validation
+        self._required_icons = self._get_required_icons()
+        
         if self.preferred_icon_set == "auto":
             # Automatically select the best available icon set
             available_sets = [(name, icon_set) for name, icon_set in self.icon_sets.items() 
@@ -108,8 +116,27 @@ class IconSetManager:
             if available_sets:
                 # Sort by priority (higher = better)
                 available_sets.sort(key=lambda x: x[1].priority, reverse=True)
-                self.active_icon_set = available_sets[0][0]
-                self.logger.info(f"Auto-selected icon set: {self.active_icon_set}")
+                
+                # If all-or-nothing mode, validate icon sets
+                if self._all_or_nothing_mode:
+                    for set_name, icon_set in available_sets:
+                        if self._validate_icon_set(set_name):
+                            self.active_icon_set = set_name
+                            self.logger.info(f"Auto-selected icon set: {self.active_icon_set} (all icons validated)")
+                            return
+                    
+                    # No set has all required icons, use material-complete
+                    if "material-complete" in self.icon_sets:
+                        self.active_icon_set = "material-complete"
+                        self.logger.info("Using material-complete icon set (all-or-nothing fallback)")
+                    else:
+                        # Fall back to highest priority
+                        self.active_icon_set = available_sets[0][0]
+                        self.logger.warning(f"No icon set has all required icons, using {self.active_icon_set}")
+                else:
+                    # Non all-or-nothing mode - use highest priority
+                    self.active_icon_set = available_sets[0][0]
+                    self.logger.info(f"Auto-selected icon set: {self.active_icon_set}")
             else:
                 self.logger.warning("No icon sets available")
                 
@@ -118,8 +145,18 @@ class IconSetManager:
             if self.preferred_icon_set in self.icon_sets:
                 icon_set = self.icon_sets[self.preferred_icon_set]
                 if icon_set.is_available():
-                    self.active_icon_set = self.preferred_icon_set
-                    self.logger.info(f"Using preferred icon set: {self.active_icon_set}")
+                    # Check if all-or-nothing validation passes
+                    if self._all_or_nothing_mode and not self._validate_icon_set(self.preferred_icon_set):
+                        self.logger.warning(f"Preferred icon set '{self.preferred_icon_set}' missing required icons")
+                        if "material-complete" in self.icon_sets:
+                            self.active_icon_set = "material-complete"
+                            self.logger.info("Using material-complete icon set (all-or-nothing fallback)")
+                        else:
+                            self.active_icon_set = self.preferred_icon_set
+                            self.logger.warning("Continuing with incomplete icon set")
+                    else:
+                        self.active_icon_set = self.preferred_icon_set
+                        self.logger.info(f"Using preferred icon set: {self.active_icon_set}")
                 else:
                     self.logger.warning(f"Preferred icon set '{self.preferred_icon_set}' not available")
                     self._select_active_icon_set_fallback()
@@ -129,12 +166,75 @@ class IconSetManager:
     
     def _select_active_icon_set_fallback(self):
         """Select fallback icon set when preferred is unavailable."""
+        # Try material-complete first for all-or-nothing mode
+        if self._all_or_nothing_mode and "material-complete" in self.icon_sets:
+            self.active_icon_set = "material-complete"
+            self.logger.info("Using fallback icon set: material-complete")
         # Try minimal icon set as ultimate fallback
-        if "minimal" in self.icon_sets and self.icon_sets["minimal"].is_available():
+        elif "minimal" in self.icon_sets and self.icon_sets["minimal"].is_available():
             self.active_icon_set = "minimal"
             self.logger.info("Using fallback icon set: minimal")
         else:
             self.logger.error("No fallback icon set available")
+    
+    def _get_required_icons(self) -> List[str]:
+        """Get list of required icons for all-or-nothing validation."""
+        # Start with a base set of essential icons
+        base_icons = [
+            "info", "warning", "error", "success", "question",
+            "save", "open", "close", "folder", "file",
+            "settings", "user", "notification", "home"
+        ]
+        
+        # Check if material-complete icon set has additional requirements
+        if "material-complete" in self.icon_sets:
+            material_set = self.icon_sets["material-complete"]
+            if hasattr(material_set, 'get_required_icons'):
+                return material_set.get_required_icons()
+        
+        return base_icons
+    
+    def _validate_icon_set(self, set_name: str) -> bool:
+        """
+        Validate if an icon set has all required icons.
+        
+        Args:
+            set_name: Name of the icon set to validate
+            
+        Returns:
+            True if all required icons are available, False otherwise
+        """
+        # Check cache first
+        cache_key = f"{set_name}:{','.join(sorted(self._required_icons))}"
+        if cache_key in self._validation_cache:
+            return self._validation_cache[cache_key]
+        
+        icon_set = self.icon_sets.get(set_name)
+        if not icon_set or not icon_set.is_available():
+            self._validation_cache[cache_key] = False
+            return False
+        
+        # Special handling for system icon set with validate_icons method
+        if hasattr(icon_set, 'validate_icons'):
+            results = icon_set.validate_icons(self._required_icons)
+            missing = [name for name, path in results.items() if path is None]
+            is_valid = len(missing) == 0
+            
+            if not is_valid:
+                self.logger.debug(f"Icon set '{set_name}' missing icons: {missing}")
+        else:
+            # For other icon sets, check each icon individually
+            missing = []
+            for icon_name in self._required_icons:
+                if not icon_set.get_icon(icon_name):
+                    missing.append(icon_name)
+            
+            is_valid = len(missing) == 0
+            if not is_valid:
+                self.logger.debug(f"Icon set '{set_name}' missing icons: {missing}")
+        
+        self._validation_cache[cache_key] = is_valid
+        return is_valid
     
     @lru_cache(maxsize=256)
     def get_icon(self, name: str, fallback: bool = True) -> Optional[str]:
@@ -414,7 +514,43 @@ class IconSetManager:
     def clear_cache(self) -> None:
         """Clear the icon resolution cache."""
         self.get_icon.cache_clear()
+        self._validation_cache.clear()
         self.logger.debug("Cleared icon resolution cache")
+    
+    def set_all_or_nothing_mode(self, enabled: bool) -> None:
+        """
+        Enable or disable all-or-nothing icon resolution mode.
+        
+        Args:
+            enabled: True to enable all-or-nothing mode, False to disable
+        """
+        if self._all_or_nothing_mode != enabled:
+            self._all_or_nothing_mode = enabled
+            self.logger.info(f"All-or-nothing mode: {'enabled' if enabled else 'disabled'}")
+            
+            # Re-select active icon set with new mode
+            self._select_active_icon_set()
+            
+            # Clear caches as resolution behavior changed
+            self.clear_cache()
+    
+    def get_all_or_nothing_mode(self) -> bool:
+        """Get current all-or-nothing mode state."""
+        return self._all_or_nothing_mode
+    
+    def set_required_icons(self, icon_names: List[str]) -> None:
+        """
+        Set custom list of required icons for all-or-nothing validation.
+        
+        Args:
+            icon_names: List of icon names that must be present
+        """
+        self._required_icons = icon_names
+        self._validation_cache.clear()
+        
+        # Re-validate current icon set
+        if self._all_or_nothing_mode:
+            self._select_active_icon_set()
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -12,7 +12,7 @@ System icon set using icon_mapper.IconResolver from:
 """
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Dict
 from pathlib import Path
 
 from .base import IconSet
@@ -159,6 +159,26 @@ class SystemIconSet(IconSet):
         # Cache negative results to avoid repeated lookups
         self._cache[name] = None
         return None
+    
+    def validate_icons(self, icon_names: List[str]) -> Dict[str, Optional[Path]]:
+        """
+        Validate multiple icons at once for all-or-nothing theming.
+        
+        Args:
+            icon_names: List of icon names to validate
+            
+        Returns:
+            Dictionary mapping icon names to their resolved paths (or None)
+        """
+        if not self.is_available():
+            return {name: None for name in icon_names}
+        
+        try:
+            # Use icon_mapper's validate_icons method
+            return self._resolver.validate_icons(icon_names)
+        except Exception as e:
+            self.logger.warning(f"Failed to validate icons: {e}")
+            return {name: None for name in icon_names}
     
     def _should_log_resolution(self) -> bool:
         """Check if icon resolution should be logged based on config."""

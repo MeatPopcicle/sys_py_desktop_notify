@@ -12,6 +12,7 @@ from .base import IconSet
 from .manager import IconSetManager, get_icon_set_manager
 from .system import SystemIconSet
 from .material import MaterialIconSet
+from .material_complete import MaterialCompleteIconSet
 from .minimal import MinimalIconSet
 
 __all__ = [
@@ -19,6 +20,7 @@ __all__ = [
     "IconSetManager",
     "get_icon_set_manager",
     "SystemIconSet",
-    "MaterialIconSet", 
+    "MaterialIconSet",
+    "MaterialCompleteIconSet",
     "MinimalIconSet",
 ]

@@ -420,6 +420,199 @@ def demo_real_world_scenarios():
     time.sleep(2)
 
 
+def demo_icon_showcase():
+    """Showcase all 70 standard icons one by one."""
+    print_section("Icon Showcase - All 70 Standard Icons")
+    
+    manager = NotificationManager()
+    
+    # The 70 standard icons from breeze.yaml (removing duplicates)
+    all_icons = [
+        # Status/Dialog (8)
+        ('info', 'Information', 'Status and information messages'),
+        ('warning', 'Warning', 'Warning messages and alerts'),
+        ('error', 'Error', 'Error messages and failures'),
+        ('success', 'Success', 'Success confirmations'),
+        ('question', 'Question', 'Help and questions'),
+        ('alert', 'Alert', 'Important alerts'),
+        ('ok', 'OK', 'Confirmation and approval'),
+        ('valid', 'Valid', 'Validation success'),
+        
+        # Actions (19)
+        ('save', 'Save', 'Save documents and files'),
+        ('open', 'Open', 'Open files and folders'),
+        ('new', 'New', 'Create new items'),
+        ('copy', 'Copy', 'Copy to clipboard'),
+        ('cut', 'Cut', 'Cut to clipboard'),
+        ('paste', 'Paste', 'Paste from clipboard'),
+        ('undo', 'Undo', 'Undo last action'),
+        ('redo', 'Redo', 'Redo last action'),
+        ('find', 'Find', 'Search and find'),
+        ('delete', 'Delete', 'Delete items'),
+        ('clear', 'Clear', 'Clear content'),
+        ('back', 'Back', 'Navigate backwards'),
+        ('forward', 'Forward', 'Navigate forwards'),
+        ('up', 'Up', 'Navigate up'),
+        ('down', 'Down', 'Navigate down'),
+        ('home', 'Home', 'Go to home'),
+        ('refresh', 'Refresh', 'Refresh content'),
+        ('edit', 'Edit', 'Edit content'),
+        ('close', 'Close', 'Close windows'),
+        
+        # Media (8)
+        ('play', 'Play', 'Play media'),
+        ('pause', 'Pause', 'Pause playback'),
+        ('stop', 'Stop', 'Stop playback'),
+        ('next', 'Next', 'Next track'),
+        ('previous', 'Previous', 'Previous track'),
+        ('record', 'Record', 'Record audio/video'),
+        ('music', 'Music', 'Music files'),
+        ('video', 'Video', 'Video files'),
+        
+        # Devices (8)
+        ('microphone', 'Microphone', 'Audio input device'),
+        ('camera', 'Camera', 'Camera device'),
+        ('printer', 'Printer', 'Print documents'),
+        ('scanner', 'Scanner', 'Scan documents'),
+        ('speaker', 'Speaker', 'Audio output'),
+        ('headphones', 'Headphones', 'Audio headphones'),
+        ('battery', 'Battery', 'Battery status'),
+        ('mic', 'Mic', 'Microphone (short)'),
+        
+        # System (11)
+        ('settings', 'Settings', 'System settings'),
+        ('user', 'User', 'User account'),
+        ('users', 'Users', 'Multiple users'),
+        ('network', 'Network', 'Network connections'),
+        ('wifi', 'WiFi', 'Wireless network'),
+        ('bluetooth', 'Bluetooth', 'Bluetooth connectivity'),
+        ('power', 'Power', 'System power'),
+        ('logout', 'Logout', 'Log out of system'),
+        ('lock', 'Lock', 'Lock screen'),
+        ('config', 'Config', 'Configuration'),
+        ('preferences', 'Preferences', 'User preferences'),
+        
+        # Applications (10)
+        ('browser', 'Browser', 'Web browser'),
+        ('mail', 'Mail', 'Email application'),
+        ('editor', 'Editor', 'Text editor'),
+        ('terminal', 'Terminal', 'Command terminal'),
+        ('calculator', 'Calculator', 'Calculator app'),
+        ('folder', 'Folder', 'File folders'),
+        ('file', 'File', 'Generic files'),
+        ('document', 'Document', 'Text documents'),
+        ('image', 'Image', 'Image files'),
+        ('archive', 'Archive', 'Archive files'),
+        
+        # Status/Loading (5)
+        ('load', 'Load', 'Loading content'),
+        ('loading', 'Loading', 'Loading in progress'),
+        ('process', 'Process', 'Processing data'),
+        ('working', 'Working', 'Work in progress'),
+        ('busy', 'Busy', 'System busy'),
+    ]
+    
+    print(f"Showcasing {len(all_icons)} standard icons...")
+    print("Each icon will be displayed for 4 seconds.")
+    print("Press Ctrl+C to interrupt the showcase.")
+    print()
+    
+    input("Press ENTER to start the icon showcase...")
+    
+    for i, (icon_name, title, description) in enumerate(all_icons, 1):
+        print(f"[{i:2d}/{len(all_icons)}] Showing: {icon_name} - {title}")
+        
+        try:
+            manager.send(
+                icon=icon_name,
+                title=f"{title} ({icon_name})",
+                message=description,
+                timeout=4000
+            )
+            
+            # Wait 4 seconds before next icon
+            time.sleep(4)
+            
+        except Exception as e:
+            print(f"   ⚠️  Error showing {icon_name}: {e}")
+            time.sleep(1)
+    
+    print(f"\n🎉 Showcase complete! Displayed {len(all_icons)} icons.")
+
+
+def demo_icon_sets_and_all_or_nothing():
+    """Demonstrate icon sets and all-or-nothing functionality."""
+    print_section("Icon Sets & All-or-Nothing Mode")
+    
+    manager = NotificationManager()
+    icon_manager = manager.icon_manager
+    
+    if not icon_manager:
+        print("❌ Could not get icon manager")
+        return
+    
+    print(f"Available icon sets: {', '.join(icon_manager.list_available_sets())}")
+    print(f"Current icon set: {icon_manager.get_active_icon_set()}")
+    print(f"All-or-nothing mode: {icon_manager.get_all_or_nothing_mode()}")
+    
+    # Show current icon resolution for some icons
+    test_icons = ['info', 'warning', 'error', 'save', 'folder']
+    print(f"\nCurrent icon resolution (using {icon_manager.get_active_icon_set()}):")
+    for icon in test_icons:
+        resolved = icon_manager.get_icon(icon)
+        if resolved:
+            if resolved.startswith('/'):
+                print(f"  {icon}: {Path(resolved).name}")
+            else:
+                print(f"  {icon}: {resolved}")
+        else:
+            print(f"  {icon}: NOT FOUND")
+    
+    # Demonstrate switching icon sets
+    available_sets = icon_manager.list_available_sets()
+    
+    if 'material-complete' in available_sets:
+        print("\nSwitching to material-complete icon set...")
+        icon_manager.set_active_icon_set('material-complete')
+        manager.send("info", "Icon Set Changed", "Now using Material Design Complete icons")
+        time.sleep(2)
+        
+        print(f"Current icon set: {icon_manager.get_active_icon_set()}")
+        for icon in test_icons:
+            resolved = icon_manager.get_icon(icon)
+            if resolved:
+                print(f"  {icon}: {Path(resolved).name if resolved.startswith('/') else resolved}")
+    
+    if 'minimal' in available_sets:
+        print("\nSwitching to minimal icon set...")
+        icon_manager.set_active_icon_set('minimal')
+        manager.send("info", "Icon Set Changed", "Now using minimal unicode icons")
+        time.sleep(2)
+        
+        print(f"Current icon set: {icon_manager.get_active_icon_set()}")
+        for icon in test_icons:
+            resolved = icon_manager.get_icon(icon)
+            if resolved:
+                print(f"  {icon}: {resolved}")
+    
+    # Demonstrate all-or-nothing mode
+    print("\nDemonstrating all-or-nothing mode...")
+    
+    # First disable all-or-nothing to see mixed behavior
+    print("Disabling all-or-nothing mode...")
+    icon_manager.set_all_or_nothing_mode(False)
+    manager.send("info", "All-or-Nothing Disabled", "May use mixed icon sources")
+    time.sleep(2)
+    
+    # Re-enable all-or-nothing
+    print("Re-enabling all-or-nothing mode...")
+    icon_manager.set_all_or_nothing_mode(True)
+    manager.send("success", "All-or-Nothing Enabled", "Consistent icon style guaranteed")
+    time.sleep(2)
+    
+    print(f"Final icon set: {icon_manager.get_active_icon_set()}")
+
+
 def demo_backend_features():
     """Demonstrate backend-specific features."""
     print_section("Backend Features")
@@ -508,6 +701,7 @@ def run_full_demo():
     try:
         demo_basic_notifications()
         demo_icon_variety()
+        demo_icon_sets_and_all_or_nothing()
         demo_notification_updates()
         demo_interactive_actions()
         demo_real_world_scenarios()
@@ -581,6 +775,44 @@ def run_interactive_only():
         return False
 
 
+def run_icon_demo():
+    """Run only the icon sets and all-or-nothing demo."""
+    print_header("ICON SETS & ALL-OR-NOTHING DEMO")
+    
+    if not check_system():
+        return False
+    
+    try:
+        demo_icon_sets_and_all_or_nothing()
+        print("✨ Icon demo completed!")
+        return True
+    except KeyboardInterrupt:
+        print("\n\n⚠️  Icon demo interrupted")
+        return False
+    except Exception as e:
+        print(f"\n\n❌ Error during icon demo: {e}")
+        return False
+
+
+def run_icon_showcase():
+    """Run icon showcase showing all 70 standard icons."""
+    print_header("ICON SHOWCASE - ALL 70 STANDARD ICONS")
+    
+    if not check_system():
+        return False
+    
+    try:
+        demo_icon_showcase()
+        print("✨ Icon showcase completed!")
+        return True
+    except KeyboardInterrupt:
+        print("\n\n⚠️  Icon showcase interrupted")
+        return False
+    except Exception as e:
+        print(f"\n\n❌ Error during icon showcase: {e}")
+        return False
+
+
 def main():
     """Main demo function with command-line argument handling."""
     parser = argparse.ArgumentParser(
@@ -588,11 +820,14 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  python demo.py                    # Run full demo
-  python demo.py --quick            # Quick functionality test
-  python demo.py --interactive      # Interactive actions only
-  python demo.py --verbose          # Full demo with debug output
-  python demo.py --backend console  # Force specific backend
+  python demo.py                         # Run full demo
+  python demo.py --quick                 # Quick functionality test
+  python demo.py --interactive           # Interactive actions only
+  python demo.py --icons                 # Icon sets and all-or-nothing demo
+  python demo.py --showcase              # Showcase all 70 standard icons
+  python demo.py --verbose               # Full demo with debug output
+  python demo.py --backend console       # Force specific backend
+  python demo.py --icon-set material-complete  # Force material-complete icons
         """
     )
     
@@ -606,6 +841,18 @@ Examples:
         "--interactive", "-i", 
         action="store_true",
         help="Run only interactive actions demo"
+    )
+    
+    parser.add_argument(
+        "--icons", 
+        action="store_true",
+        help="Run only icon sets and all-or-nothing demo"
+    )
+    
+    parser.add_argument(
+        "--showcase", 
+        action="store_true",
+        help="Run icon showcase displaying all 70 standard icons"
     )
     
     parser.add_argument(
@@ -623,7 +870,7 @@ Examples:
     parser.add_argument(
         "--icon-set", "-s",
         type=str,
-        help="Force specific icon set (system, material, minimal, auto)"
+        help="Force specific icon set (system, material, material-complete, minimal, auto)"
     )
     
     parser.add_argument(
@@ -663,6 +910,10 @@ Examples:
         success = run_quick_test()
     elif args.interactive:
         success = run_interactive_only()
+    elif args.icons:
+        success = run_icon_demo()
+    elif args.showcase:
+        success = run_icon_showcase()
     else:
         success = run_full_demo()
     
