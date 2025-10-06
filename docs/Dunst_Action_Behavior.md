@@ -222,24 +222,85 @@ This will walk you through testing:
 
 ### Problem: Left-click doesn't trigger action
 
-**Solution:** Make sure you're using the `"default"` key:
+**Possible causes:**
 
-```python
-# Wrong - no default action
-actions = {"accept": "Accept"}
+1. **Not using "default" key:**
+   ```python
+   # Wrong - no default action
+   actions = {"accept": "Accept"}
 
-# Correct - has default action
-actions = {"default": "Accept"}
-```
+   # Correct - has default action
+   actions = {"default": "Accept"}
+   ```
+
+2. **dunstrc configured to close on left-click:**
+
+   Check your dunstrc for this setting:
+   ```bash
+   grep "mouse_left_click" ~/.config/dunst/dunstrc
+   ```
+
+   If it shows `mouse_left_click = close_current`, left-click will always close the notification instead of triggering the default action.
+
+   **Solution:** Either change dunstrc to:
+   ```ini
+   mouse_left_click = do_action, close_current
+   ```
+
+   Or don't use "default" actions and rely only on right-click context menu:
+   ```python
+   # Only use right-click menu - works with close_current
+   actions = {
+       "yes": "Accept",
+       "no": "Decline"
+   }
+   ```
 
 ### Problem: Right-click doesn't show menu
 
-**Possible causes:**
+**Most Common Cause: Missing dmenu/rofi**
+
+Dunst requires an external menu program (dmenu or rofi) to display the context menu. Check your dunstrc:
+
+```bash
+grep "^[[:space:]]*dmenu" ~/.config/dunst/dunstrc
+```
+
+**Solution:**
+1. Install dmenu or rofi:
+   ```bash
+   # Arch/Manjaro
+   sudo pacman -S dmenu
+   # or
+   sudo pacman -S rofi
+
+   # Ubuntu/Debian
+   sudo apt install dmenu
+   # or
+   sudo apt install rofi
+   ```
+
+2. Configure dunstrc to use the menu program:
+   ```ini
+   # For dmenu:
+   dmenu = /usr/bin/dmenu -p dunst:
+
+   # For rofi:
+   dmenu = /usr/bin/rofi -dmenu -p dunst:
+   ```
+
+3. Restart Dunst:
+   ```bash
+   killall dunst
+   # Dunst will auto-restart in most desktop environments
+   ```
+
+**Other possible causes:**
 1. Only one action (and it's "default") - no menu needed
 2. Dunst version doesn't support actions - check `dunstify --capabilities`
 3. Desktop environment intercepts right-click
 
-**Solution:** Verify with direct dunstify test:
+**Verify with direct dunstify test:**
 
 ```bash
 dunstify -A "yes,Yes" -A "no,No" "Test" "Right-click me"
