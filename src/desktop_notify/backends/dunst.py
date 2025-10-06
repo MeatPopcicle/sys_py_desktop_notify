@@ -79,16 +79,42 @@ class DunstBackend(NotificationBackend):
         title: str,
         message: str,
         notification_id: Optional[str] = None,
-        urgency: str = 'normal', 
+        urgency: str = 'normal',
         timeout: Optional[int] = None,
         actions: Optional[Dict[str, str]] = None,
         action_callback: Optional[Callable[[str], None]] = None,
         **kwargs
     ) -> Union[bool, str]:
         """
-        ─────────────────────────────────────────────────────────────────
-        Send notification via dunstify
-        ─────────────────────────────────────────────────────────────────
+        Send notification via dunstify.
+
+        Args:
+            icon: Icon name or path
+            title: Notification title
+            message: Notification message body
+            notification_id: Optional ID for replacing/updating notifications
+            urgency: Urgency level ('low', 'normal', 'critical')
+            timeout: Timeout in milliseconds (None = default)
+            actions: Dictionary of actions {key: label}
+                    Special key "default": Triggered by LEFT-CLICK
+                    Other keys: Appear in RIGHT-CLICK context menu
+                    Example: {"default": "Accept", "decline": "Decline"}
+            action_callback: Function to call with selected action key
+            **kwargs: Additional dunst-specific options:
+                     - category: Notification category
+                     - desktop_entry: Desktop entry name
+                     - sound: Whether to play sound
+
+        Returns:
+            If actions provided: Selected action key (str) or None if dismissed/timeout
+            If no actions: True if sent successfully, False otherwise
+
+        Mouse Click Behavior:
+            - LEFT-CLICK: Triggers "default" action (if provided)
+            - RIGHT-CLICK: Shows context menu with non-default actions
+            - MIDDLE-CLICK: Dismisses notification
+
+        See docs/Dunst_Action_Behavior.md for detailed documentation.
         """
         if not self.is_available():
             return False
@@ -139,9 +165,31 @@ class DunstBackend(NotificationBackend):
             # ─────────────────────────────────────────────────────────────────
             # Add actions if provided
             # ─────────────────────────────────────────────────────────────────
+            # ACTION BEHAVIOR:
+            #   - "default" key: Triggers on LEFT-CLICK (direct click on notification)
+            #   - Other keys: Appear in RIGHT-CLICK context menu
+            #   - Middle-click: Always dismisses (built-in Dunst behavior)
+            #
+            # Example:
+            #   actions = {
+            #       "default": "Accept",  # Left-click triggers this
+            #       "decline": "Decline", # Right-click menu option
+            #       "later": "Later"      # Right-click menu option
+            #   }
+            #
+            # See docs/Dunst_Action_Behavior.md for detailed documentation
+            # ─────────────────────────────────────────────────────────────────
             if actions:
+                # Add actions in consistent order: default first, then others
+                if "default" in actions:
+                    cmd.extend(["-A", f"default,{actions['default']}"])
+                    self.logger.debug(f"Added default action (left-click): {actions['default']}")
+
+                # Add non-default actions (right-click context menu)
                 for action_id, label in actions.items():
-                    cmd.extend(["-A", f"{action_id},{label}"])
+                    if action_id != "default":
+                        cmd.extend(["-A", f"{action_id},{label}"])
+                        self.logger.debug(f"Added context menu action: {action_id}={label}")
             
             # ─────────────────────────────────────────────────────────────────
             # Add title and message
