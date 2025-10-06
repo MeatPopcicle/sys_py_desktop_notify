@@ -7,13 +7,12 @@ AUTHOR: Desktop Notify Team
 DATE: 2024-01-15
 VERSION: 1.0.0
 
-System icon set using icon_mapper.IconResolver from:
-/home/gauol/Scratch/Projects-Code/icon-mapper
+System icon set using icon_mapper.IconResolver for desktop theme icon resolution.
 """
 
 import logging
-from typing import List, Optional, Dict
 from pathlib import Path
+from typing import List, Optional, Dict
 
 from .base import IconSet
 from ..exceptions import IconError
@@ -22,12 +21,6 @@ try:
     # ═══════════════════════════════════════════════════════════════════════════════
     # IMPORT icon_mapper.IconResolver
     # ═══════════════════════════════════════════════════════════════════════════════
-    import sys
-    from pathlib import Path
-    icon_mapper_path = Path("/home/gauol/Scratch/Projects-Code/icon-mapper/src")
-    if icon_mapper_path.exists() and str(icon_mapper_path) not in sys.path:
-        sys.path.insert(0, str(icon_mapper_path))
-    
     from icon_mapper import IconResolver
     ICON_MAPPER_AVAILABLE = True
 except ImportError as e:
@@ -44,9 +37,8 @@ class SystemIconSet(IconSet):
     ▄▄▄▄█ █▄▄ █▄▄▄   █   █▄▄▄ █▄▄▄▄
     ///////////////////////////////////////////////////////////////////
     System icon set using desktop theme icons via icon_mapper.IconResolver.
-    
-    INTEGRATION: Uses icon_mapper.IconResolver from:
-    /home/gauol/Scratch/Projects-Code/icon-mapper
+
+    INTEGRATION: Uses icon_mapper package for system icon resolution.
     """
     
     def __init__(

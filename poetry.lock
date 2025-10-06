@@ -83,25 +83,6 @@ files = [
 ]
 
 [[package]]
-name = "config-manager"
-version = "0.1.0"
-description = "A flexible and type-safe configuration management library for Python applications"
-optional = false
-python-versions = "^3.8"
-files = []
-develop = true
-
-[package.dependencies]
-pydantic = "^2.0"
-python-dotenv = "^1.0.0"
-pyyaml = "^6.0"
-toml = "^0.10.2"
-
-[package.source]
-type = "directory"
-url = "../py_config_manager"
-
-[[package]]
 name = "coverage"
 version = "7.10.1"
 description = "Code coverage measurement for Python"
@@ -223,19 +204,21 @@ test = ["pytest (>=6)"]
 
 [[package]]
 name = "icon-mapper"
-version = "0.1.0"
+version = "1.1.0"
 description = "Simple icon resolver using explicit YAML mappings - no theme detection, no fallbacks"
 optional = false
 python-versions = "^3.8.1"
 files = []
-develop = true
+develop = false
 
 [package.dependencies]
 PyYAML = "^6.0"
 
 [package.source]
-type = "directory"
-url = "../icon-mapper"
+type = "git"
+url = "git@github.com:MeatPopcicle/sys_py_icon-mapper.git"
+reference = "v1.1.0"
+resolved_reference = "25318053d9920509174745afcd7dcea32a5318cc"
 
 [[package]]
 name = "iniconfig"
@@ -365,6 +348,27 @@ files = [
 [package.extras]
 dev = ["pre-commit", "tox"]
 testing = ["coverage", "pytest", "pytest-benchmark"]
+
+[[package]]
+name = "py-config-manager"
+version = "1.0.0"
+description = "A flexible and type-safe configuration management library for Python applications"
+optional = false
+python-versions = ">=3.8.1,<4.0"
+files = []
+develop = false
+
+[package.dependencies]
+pydantic = "^2.0"
+python-dotenv = "^1.0.0"
+pyyaml = "^6.0"
+toml = "^0.10.2"
+
+[package.source]
+type = "git"
+url = "git@github.com:MeatPopcicle/sys_py_config_manager.git"
+reference = "v1.0.0"
+resolved_reference = "174cfdc3bb5bad4e07a6eeb0dfaf9c45a61bc0fa"
 
 [[package]]
 name = "pydantic"
@@ -720,4 +724,4 @@ typing-extensions = ">=4.12.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "fc0816d6ba7d60d056e26063c441520a441eac741f7d1709ade6ff4f8e7ba0f8"
+content-hash = "514020a2f92c87e79bc8d7e693d4c32dc96e04a72d7a26b4a16790249d860747"
