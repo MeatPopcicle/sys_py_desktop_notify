@@ -4,8 +4,41 @@ version = "1.0.0"
 description = "Unified desktop notification system for Linux with backend abstraction and rich icon support"
 authors = ["Desktop Notify Team"]
 readme = "README.md"
+license = "MIT"
+homepage = "https://github.com/MeatPopcicle/sys_py_desktop_notify"
+repository = "https://github.com/MeatPopcicle/sys_py_desktop_notify"
+documentation = "https://github.com/MeatPopcicle/sys_py_desktop_notify/tree/main/docs"
+keywords = [
+    "notifications",
+    "desktop",
+    "linux",
+    "dunst",
+    "libnotify",
+    "notification-daemon",
+    "desktop-notifications",
+    "toast",
+    "alerts"
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Desktop Environment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: System :: Notifications",
+    "Typing :: Typed"
+]
 packages = [
     {include = "desktop_notify", from = "src"}
+]
+include = [
+    "src/desktop_notify/iconsets/assets/**/*.svg"
 ]
 
 [tool.poetry.dependencies]
