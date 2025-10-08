@@ -66,6 +66,7 @@ def create_desktop_notify_schema() -> ConfigSchema:
     dunst_schema.add_field("command", str, default="dunstify")
     dunst_schema.add_field("supports_markup", bool, default=True)
     dunst_schema.add_field("max_timeout", int, default=60000)
+    dunst_schema.add_field("rofi_theme", str, default="")
     
     backends_schema.add_nested_schema("dunst", dunst_schema)
     

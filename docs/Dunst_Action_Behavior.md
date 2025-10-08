@@ -322,8 +322,20 @@ dunstify -A "yes,Yes" -A "no,No" "Test" "Right-click me"
    pgrep -a dunst
    ```
 
+## Customizing Action Menu Appearance
+
+The right-click context menu is rendered by rofi (or dmenu). You can customize its appearance to match your desktop theme.
+
+See [Rofi Theming](Rofi_Theming.md) for complete documentation on:
+- Installing and configuring rofi themes
+- Customizing colors, borders, and layout
+- Using your existing rofi color schemes
+- Advanced theming options
+
 ## References
 
+- [Rofi Theming](Rofi_Theming.md) - Desktop Notify rofi theme customization guide
 - [Dunst Documentation](https://dunst-project.org/documentation/)
 - [dunstify man page](https://man.archlinux.org/man/dunstify.1)
 - [Desktop Notifications Specification](https://specifications.freedesktop.org/notification-spec/latest/)
+- [Rofi Documentation](https://github.com/davatorium/rofi)

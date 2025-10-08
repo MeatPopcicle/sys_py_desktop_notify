@@ -1,0 +1,164 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// Desktop-Notify Rofi Theme
+// Purpose: Notification action menu styling for Dunst interactive notifications
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Color Scheme Import
+// ───────────────────────────────────────────────────────────────────────────────
+// Import user's color scheme if available, otherwise use embedded defaults
+@import "~/.config/rofi/colors/ayu-dark.rasi"
+
+// Fallback colors if import fails
+* {
+    background:     #0e1419FF;
+    background-alt: #0e1419FF;
+    foreground:     #e5e1cfFF;
+    selected:       #36a3d9FF;
+    active:         #323232FF;
+    urgent:         #ff3333FF;
+
+    // Derived colors for better readability
+    background-colour:       @background;
+    foreground-colour:       @foreground;
+    normal-background:       @background;
+    normal-foreground:       @foreground;
+    selected-normal-background: @selected;
+    selected-normal-foreground: @background;
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Window Configuration
+// ───────────────────────────────────────────────────────────────────────────────
+window {
+    transparency:                "real";
+    location:                    north;
+    anchor:                      north;
+    fullscreen:                  false;
+    width:                       500px;
+    x-offset:                    0px;
+    y-offset:                    50px;
+
+    enabled:                     true;
+    margin:                      0px;
+    padding:                     0px;
+    border:                      2px solid;
+    border-radius:               12px;
+    border-color:                @selected;
+    background-color:            @background-colour;
+    cursor:                      "default";
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Main Box Container
+// ───────────────────────────────────────────────────────────────────────────────
+mainbox {
+    enabled:                     true;
+    spacing:                     10px;
+    margin:                      0px;
+    padding:                     15px;
+    border:                      0px solid;
+    border-radius:               0px;
+    border-color:                @selected;
+    background-color:            transparent;
+    children:                    [ "message", "listview" ];
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Message Box (Notification Content)
+// ───────────────────────────────────────────────────────────────────────────────
+message {
+    enabled:                     true;
+    margin:                      0px;
+    padding:                     10px;
+    border:                      0px solid;
+    border-radius:               8px;
+    border-color:                @selected;
+    background-color:            @background-alt;
+    text-color:                  @foreground-colour;
+}
+
+textbox {
+    background-color:            transparent;
+    text-color:                  inherit;
+    vertical-align:              0.5;
+    horizontal-align:            0.0;
+    placeholder-color:           @foreground-colour;
+    blink:                       true;
+    markup:                      true;
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Action List View
+// ───────────────────────────────────────────────────────────────────────────────
+listview {
+    enabled:                     true;
+    columns:                     1;
+    lines:                       4;
+    cycle:                       true;
+    dynamic:                     true;
+    scrollbar:                   false;
+    layout:                      vertical;
+    reverse:                     false;
+    fixed-height:                true;
+    fixed-columns:               true;
+
+    spacing:                     5px;
+    margin:                      0px;
+    padding:                     0px;
+    border:                      0px solid;
+    border-radius:               0px;
+    border-color:                @selected;
+    background-color:            transparent;
+    text-color:                  @foreground-colour;
+    cursor:                      "default";
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Action Elements (Buttons)
+// ───────────────────────────────────────────────────────────────────────────────
+element {
+    enabled:                     true;
+    spacing:                     10px;
+    margin:                      0px;
+    padding:                     10px;
+    border:                      0px solid;
+    border-radius:               6px;
+    border-color:                @selected;
+    background-color:            @normal-background;
+    text-color:                  @normal-foreground;
+    cursor:                      pointer;
+}
+
+element normal.normal {
+    background-color:            @normal-background;
+    text-color:                  @normal-foreground;
+}
+
+element selected.normal {
+    background-color:            @selected-normal-background;
+    text-color:                  @selected-normal-foreground;
+}
+
+element-text {
+    background-color:            transparent;
+    text-color:                  inherit;
+    highlight:                   inherit;
+    cursor:                      inherit;
+    vertical-align:              0.5;
+    horizontal-align:            0.0;
+}
+
+// ───────────────────────────────────────────────────────────────────────────────
+// Disabled Components
+// ───────────────────────────────────────────────────────────────────────────────
+mode-switcher,
+inputbar,
+case-indicator,
+entry,
+prompt,
+num-filtered-rows,
+num-rows,
+element-icon {
+    enabled:                     false;
+}
