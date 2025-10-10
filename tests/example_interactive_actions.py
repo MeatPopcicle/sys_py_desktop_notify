@@ -154,9 +154,6 @@ Key Concepts:
         print(f"Running: {name}")
         print(f"{'─'*60}")
 
-        if i > 1:
-            input("\nPress ENTER to continue...")
-
         func()
         time.sleep(2)
 

@@ -32,12 +32,12 @@
 // ───────────────────────────────────────────────────────────────────────────────
 window {
     transparency:                "real";
-    location:                    north;
-    anchor:                      north;
+    location:                    center;
+    anchor:                      center;
     fullscreen:                  false;
-    width:                       500px;
+    width:                       350px;
     x-offset:                    0px;
-    y-offset:                    50px;
+    y-offset:                    0px;
 
     enabled:                     true;
     margin:                      0px;
@@ -54,9 +54,9 @@ window {
 // ───────────────────────────────────────────────────────────────────────────────
 mainbox {
     enabled:                     true;
-    spacing:                     10px;
+    spacing:                     8px;
     margin:                      0px;
-    padding:                     15px;
+    padding:                     10px;
     border:                      0px solid;
     border-radius:               0px;
     border-color:                @selected;
@@ -70,7 +70,7 @@ mainbox {
 message {
     enabled:                     true;
     margin:                      0px;
-    padding:                     10px;
+    padding:                     8px;
     border:                      0px solid;
     border-radius:               8px;
     border-color:                @selected;
@@ -119,9 +119,9 @@ listview {
 // ───────────────────────────────────────────────────────────────────────────────
 element {
     enabled:                     true;
-    spacing:                     10px;
+    spacing:                     8px;
     margin:                      0px;
-    padding:                     10px;
+    padding:                     8px;
     border:                      0px solid;
     border-radius:               6px;
     border-color:                @selected;
