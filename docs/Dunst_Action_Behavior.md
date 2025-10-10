@@ -59,6 +59,139 @@ dunstify -A "default,Quick Action" -A "yes,Yes" -A "no,No" "Title" "Message"
 | `1` | Notification timed out (no action taken) |
 | `2` | Notification was dismissed (middle-click or close button) |
 
+## Understanding Return Values
+
+### Action Keys vs Labels
+
+**CRITICAL DISTINCTION:** The return value is the action **KEY**, not the **LABEL**.
+
+```python
+actions = {
+    "accept": "Accept Call",        # KEY: "accept", LABEL: "Accept Call"
+    "decline": "Decline Call",      # KEY: "decline", LABEL: "Decline Call"
+    "ignore": "Ignore and Mute"     # KEY: "ignore", LABEL: "Ignore and Mute"
+}
+
+result = send_notification(
+    icon="phone",
+    title="Incoming Call",
+    message="Alice is calling...",
+    actions=actions
+)
+
+# ✅ CORRECT - Check against KEYs
+if result == "accept":
+    print("User accepted the call")
+elif result == "decline":
+    print("User declined the call")
+elif result == "ignore":
+    print("User ignored and muted")
+
+# ❌ WRONG - Don't check against LABELs
+if result == "Accept Call":    # This will NEVER match
+    print("This won't work")
+```
+
+### None Return Value
+
+`send_notification()` returns `None` in two cases:
+
+1. **Timeout** - User didn't interact before notification expired
+2. **Dismissed** - User middle-clicked or closed the notification
+
+**Note:** The current implementation cannot distinguish between timeout and dismiss. Both return `None`.
+
+```python
+result = send_notification(...)
+
+if result is None:
+    # Could be timeout OR dismiss - can't tell which
+    print("No action taken (timeout or dismissed)")
+```
+
+## Dunst's Design Philosophy
+
+### No Visual Action Buttons
+
+**Important:** Dunst does **NOT** render visual action buttons on notifications, unlike other notification daemons.
+
+**What this means:**
+- No clickable buttons appear on the notification window
+- The entire notification is a mouse-click target
+- Actions are triggered by **mouse click zones** (left/right/middle)
+- Right-click actions appear in an external menu (rofi/dmenu)
+
+**Comparison with other daemons:**
+
+| Feature | Dunst | GNOME Shell | KDE Plasma | mako |
+|---------|-------|-------------|------------|------|
+| Visual action buttons | ❌ No | ✅ Yes | ✅ Yes | ✅ Yes |
+| Mouse click zones | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| External menu (rofi/dmenu) | ✅ Yes | ❌ No | ❌ No | ❌ No |
+| Entire notification clickable | ✅ Yes | ❌ No | ❌ No | ❌ No |
+
+### Why No Buttons?
+
+This is a **design choice**, not a limitation:
+
+1. **Minimalism** - Dunst prioritizes lightweight, simple UI
+2. **Keyboard/mouse-driven** - Designed for efficient interaction without complex UI
+3. **Consistency** - All notifications have the same clean appearance
+4. **Performance** - No complex button rendering required
+
+### Visual Comparison
+
+**Button-based daemons (GNOME/KDE):**
+```
+┌─────────────────────────────────┐
+│ Incoming Call                   │
+│ Alice is calling...             │
+│                                 │
+│ [Accept] [Decline] [Ignore]    │ ← Visual buttons
+└─────────────────────────────────┘
+```
+
+**Dunst (click zones):**
+```
+┌─────────────────────────────────┐
+│ Incoming Call                   │ ← Left-click = default action
+│ Alice is calling...             │ ← Right-click = menu
+│                                 │ ← Middle-click = dismiss
+└─────────────────────────────────┘
+   (No visible buttons - entire notification is interactive)
+```
+
+### When Right-Clicked (Dunst with rofi):
+```
+Notification appears
+        ↓
+User right-clicks
+        ↓
+Rofi menu appears:
+┌──────────────────┐
+│ dunst:           │
+│  Accept Call     │ ← Selectable
+│  Decline Call    │ ← options
+│  Ignore and Mute │
+└──────────────────┘
+```
+
+### If You Need Visual Buttons
+
+If your application **requires** visual action buttons on notifications:
+
+**Option 1:** Use a different notification daemon
+- GNOME Shell notification daemon
+- KDE Plasma notification daemon
+- mako (Wayland)
+
+**Option 2:** Implement libnotify backend
+- Desktop Notify could add a libnotify backend
+- Would work with any freedesktop.org-compatible daemon
+- Daemons that support buttons would render them
+
+See [Notification_Daemon_Comparison.md](Notification_Daemon_Comparison.md) for detailed comparison.
+
 ## Implementation in Python
 
 ### Current desktop_notify API

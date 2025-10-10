@@ -95,10 +95,13 @@ class DunstBackend(NotificationBackend):
             notification_id: Optional ID for replacing/updating notifications
             urgency: Urgency level ('low', 'normal', 'critical')
             timeout: Timeout in milliseconds (None = default)
-            actions: Dictionary of actions {key: label}
+            actions: Dictionary of actions {key: label} where:
+                    - key: Unique identifier returned when action is selected
+                    - label: Human-readable text displayed to user
                     Special key "default": Triggered by LEFT-CLICK
                     Other keys: Appear in RIGHT-CLICK context menu
-                    Example: {"default": "Accept", "decline": "Decline"}
+                    Example: {"accept": "Accept Call", "decline": "Decline Call"}
+                             Returns "accept" or "decline", NOT the labels
             action_callback: Function to call with selected action key
             **kwargs: Additional dunst-specific options:
                      - category: Notification category
@@ -106,13 +109,37 @@ class DunstBackend(NotificationBackend):
                      - sound: Whether to play sound
 
         Returns:
-            If actions provided: Selected action key (str) or None if dismissed/timeout
+            If actions provided: Selected action KEY (str) or None if dismissed/timeout
+                                Returns the KEY, not the label!
+                                Example: {"accept": "Accept Call"} returns "accept"
             If no actions: True if sent successfully, False otherwise
+
+            Note: None can mean either timeout OR user dismissed (cannot distinguish)
 
         Mouse Click Behavior:
             - LEFT-CLICK: Triggers "default" action (if provided)
-            - RIGHT-CLICK: Shows context menu with non-default actions
+            - RIGHT-CLICK: Shows context menu with non-default actions (via rofi/dmenu)
             - MIDDLE-CLICK: Dismisses notification
+
+        Important - No Visual Buttons:
+            Dunst does NOT render visual action buttons on notifications.
+            The entire notification is a mouse-click target with click zones.
+            Right-click actions appear in an external menu (rofi/dmenu).
+            This is Dunst's design philosophy, not a limitation.
+
+        Example:
+            actions = {
+                "accept": "Accept Call",    # KEY: "accept", LABEL: "Accept Call"
+                "decline": "Decline Call"   # KEY: "decline", LABEL: "Decline Call"
+            }
+            result = send_notification(...)
+
+            if result == "accept":     # ✅ Correct - check the KEY
+                handle_accept()
+            elif result == "decline":  # ✅ Correct - check the KEY
+                handle_decline()
+            elif result is None:       # Timeout or dismissed
+                handle_no_action()
 
         See docs/Dunst_Action_Behavior.md for detailed documentation.
         """
